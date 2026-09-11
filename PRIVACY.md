@@ -34,7 +34,7 @@ navegador — nada de esto sale de tu equipo.
 ## Código
 
 El código es abierto y auditable:
-<https://github.com/TU_USUARIO/tetrio-es-patcher/tree/main/browser-extension>
+<https://github.com/EricRamirezS/TETR.IO_Parche_Espanol/tree/main/browser-extension>
 
 ## Contacto
 
