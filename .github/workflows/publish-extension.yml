@@ -1,0 +1,82 @@
+name: Publicar extensión de navegador
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['ext-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Empaquetar (solo manifest.json + content.js + icons/)
+        run: |
+          cd browser-extension
+          zip -r ../extension-package.zip manifest.json content.js icons 2>/dev/null || \
+          zip -r ../extension-package.zip manifest.json content.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-package
+          path: extension-package.zip
+
+  chrome:
+    needs: package
+    runs-on: ubuntu-latest
+    if: ${{ vars.PUBLISH_CHROME != 'false' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: extension-package }
+      - name: Subir y publicar en Chrome Web Store
+        env:
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli upload --source extension-package.zip
+          npx --yes chrome-webstore-upload-cli publish
+
+  edge:
+    needs: package
+    runs-on: ubuntu-latest
+    if: ${{ vars.PUBLISH_EDGE != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: extension-package }
+      - name: Publicar en Microsoft Edge Add-ons
+        env:
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_CLIENT_SECRET: ${{ secrets.EDGE_CLIENT_SECRET }}
+          EDGE_ACCESS_TOKEN_URL: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+        run: node browser-extension/publish-edge.mjs extension-package.zip
+
+  firefox:
+    needs: package
+    runs-on: ubuntu-latest
+    if: ${{ vars.PUBLISH_FIREFOX != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: extension-package }
+      - name: Descomprimir para firmar con web-ext
+        run: mkdir -p ext-src && unzip -o extension-package.zip -d ext-src
+      - name: Firmar y publicar en addons.mozilla.org (sin listar)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: >
+          npx --yes web-ext@latest sign
+          --source-dir=ext-src
+          --artifacts-dir=firefox-dist
+          --channel=unlisted
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firefox-xpi
+          path: firefox-dist/*.xpi
+          if-no-files-found: warn

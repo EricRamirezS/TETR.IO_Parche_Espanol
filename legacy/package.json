@@ -1,0 +1,35 @@
+{
+  "name": "tetrio-es-patcher",
+  "version": "1.0.0",
+  "description": "Standalone patcher that injects a Spanish-translated preload.js into TETR.IO Desktop's app.asar",
+  "license": "SEE LICENSE IN README.md",
+  "author": "EricRamirezS",
+  "bin": {
+    "tetrio-es-patcher": "src/index.js"
+  },
+  "scripts": {
+    "gen": "node scripts/gen-payload.js",
+    "patch": "npm run gen && node src/index.js",
+    "start": "npm run gen && node src/index.js",
+    "build": "npm run gen && pkg . --out-path dist"
+  },
+  "pkg": {
+    "scripts": [
+      "src/**/*.js"
+    ],
+    "targets": [
+      "node20-win-x64",
+      "node20-macos-x64",
+      "node20-macos-arm64",
+      "node20-linux-x64",
+      "node20-linux-arm64"
+    ],
+    "outputPath": "dist"
+  },
+  "dependencies": {
+    "@electron/asar": "^3.4.1"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.6.0"
+  }
+}

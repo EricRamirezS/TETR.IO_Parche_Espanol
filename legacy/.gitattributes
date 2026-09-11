@@ -1,0 +1,5 @@
+# Keep source line endings stable across OSes
+* text=auto eol=lf
+
+# The payload is embedded byte-for-byte into the executables — never touch it
+payload/translation.js -text

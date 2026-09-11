@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "TETR.IO en Español",
+  "short_name": "TETR.IO ES",
+  "version": "1.0.0",
+  "description": "Traduce la interfaz de TETR.IO (tetr.io, la web) al español automáticamente.",
+  "content_scripts": [
+    {
+      "matches": ["https://tetr.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{dbd678e4-ebaa-45f8-bf64-772c4741495f}",
+      "strict_min_version": "109.0"
+    }
+  }
+}

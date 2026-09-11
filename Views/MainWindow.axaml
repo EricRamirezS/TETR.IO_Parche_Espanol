@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TetrioEsPatcher.Views.MainWindow"
+        Width="560" Height="470"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Title="Traducir TETR.IO al español">
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+
+        <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,18">
+            <TextBlock Text="Traducir TETR.IO al español" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock x:Name="Subtitle" Text="Asistente" Opacity="0.6" />
+        </StackPanel>
+
+        <!-- Paso 1: inicio -->
+        <StackPanel Grid.Row="1" x:Name="Step1" Spacing="16">
+            <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="8" Padding="14">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Instalación de TETR.IO" FontWeight="SemiBold" />
+                    <TextBlock x:Name="PathText" TextWrapping="Wrap" Opacity="0.8" FontSize="12" />
+                    <TextBlock x:Name="StateText" Margin="0,2,0,0" />
+                    <Button x:Name="ChangeFolderBtn" Content="Cambiar carpeta…"
+                            HorizontalAlignment="Left" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock x:Name="NotFoundHelp" TextWrapping="Wrap" IsVisible="False"
+                       Opacity="0.85" FontSize="12" />
+
+            <StackPanel x:Name="ActionButtons" Spacing="8">
+                <Button x:Name="ApplyBtn" Content="Aplicar la traducción al español"
+                        Classes="accent" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Padding="0,10" />
+                <Button x:Name="RestoreBtn" Content="Deshacer el parche (volver al inglés)"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Padding="0,10" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Paso 2: progreso -->
+        <StackPanel Grid.Row="1" x:Name="Step2" Spacing="12" IsVisible="False">
+            <TextBlock x:Name="ProgressTitle" Text="Trabajando…" FontWeight="SemiBold" />
+            <ProgressBar IsIndeterminate="True" />
+            <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="6" Height="260">
+                <ScrollViewer x:Name="LogScroll" Padding="10">
+                    <SelectableTextBlock x:Name="LogText" FontFamily="Consolas, Menlo, monospace"
+                                         FontSize="12" TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+
+        <!-- Paso 3: resultado -->
+        <StackPanel Grid.Row="1" x:Name="Step3" Spacing="16" IsVisible="False"
+                    VerticalAlignment="Center">
+            <TextBlock x:Name="ResultIcon" FontSize="46" HorizontalAlignment="Center" />
+            <TextBlock x:Name="ResultText" TextWrapping="Wrap" HorizontalAlignment="Center"
+                       TextAlignment="Center" FontSize="15" />
+            <SelectableTextBlock x:Name="ResultDetail" TextWrapping="Wrap" TextAlignment="Center"
+                                 Opacity="0.7" FontSize="12" IsVisible="False" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                <Button x:Name="BackBtn" Content="Volver" IsVisible="False" Padding="16,8" />
+                <Button x:Name="CloseBtn" Content="Cerrar" Classes="accent" Padding="16,8" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

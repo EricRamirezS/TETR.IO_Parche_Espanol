@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest,   rid: win-x64,    artifact: tetrio-es-patcher-windows-x64.exe }
+          - { os: macos-13,         rid: osx-x64,     artifact: tetrio-es-patcher-macos-x64.zip }
+          - { os: macos-14,         rid: osx-arm64,   artifact: tetrio-es-patcher-macos-arm64.zip }
+          - { os: ubuntu-latest,    rid: linux-x64,   artifact: tetrio-es-patcher-linux-x64 }
+          # Gratis para repos públicos; si el repo es privado, elimina esta fila.
+          - { os: ubuntu-24.04-arm, rid: linux-arm64, artifact: tetrio-es-patcher-linux-arm64 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compilar (self-contained, un solo archivo)
+        run: >
+          dotnet publish TetrioEsPatcher.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true -p:PublishSingleFile=true -o out
+
+      - name: Empaquetar (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir dist
+          cp out/tetrio-es-patcher.exe "dist/${{ matrix.artifact }}"
+
+      - name: Empaquetar (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir dist
+          cp out/tetrio-es-patcher "dist/${{ matrix.artifact }}"
+          chmod +x "dist/${{ matrix.artifact }}"
+
+      - name: Empaquetar (macOS .app)
+        if: runner.os == 'macOS'
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"; [ -z "$VER" ] && VER="1.0.0"
+          APP="dist/Traducir TETR.IO.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          sed "s/__VERSION__/$VER/g" build/macos/Info.plist > "$APP/Contents/Info.plist"
+          cp out/tetrio-es-patcher "$APP/Contents/MacOS/tetrio-es-patcher"
+          chmod +x "$APP/Contents/MacOS/tetrio-es-patcher"
+          codesign --force --deep --sign - "$APP" || true
+          ( cd dist && ditto -c -k --sequesterRsrc --keepParent "Traducir TETR.IO.app" "${{ matrix.artifact }}" )
+          rm -rf "$APP"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: cd dist && sha256sum * | tee SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

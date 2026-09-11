@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# Se incrusta y se inyecta tal cual: nunca convertir finales de línea.
+Assets/translation.js -text
+
+# Binarios
+*.png binary
+*.ico binary

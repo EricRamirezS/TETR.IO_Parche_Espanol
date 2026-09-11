@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: node20-win-x64
+            bin: tetrio-es-patcher-windows-x64.exe
+            artifact: tetrio-es-patcher-windows-x64.exe
+          - os: macos-13
+            target: node20-macos-x64
+            bin: tetrio-es-patcher-macos-x64
+            artifact: tetrio-es-patcher-macos-x64.zip
+          - os: macos-14
+            target: node20-macos-arm64
+            bin: tetrio-es-patcher-macos-arm64
+            artifact: tetrio-es-patcher-macos-arm64.zip
+          - os: ubuntu-latest
+            target: node20-linux-x64
+            bin: tetrio-es-patcher-linux-x64
+            artifact: tetrio-es-patcher-linux-x64
+          # Gratis para repos públicos. Si el repo es privado y esta etiqueta no
+          # está disponible, elimina esta entrada.
+          - os: ubuntu-24.04-arm
+            target: node20-linux-arm64
+            bin: tetrio-es-patcher-linux-arm64
+            artifact: tetrio-es-patcher-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Incrustar payload/translation.js
+        run: npm run gen
+
+      - name: Compilar el ejecutable
+        # `npx pkg` a secas usa el @yao-pkg/pkg local (compatible con Node 20).
+        run: npx pkg . --targets ${{ matrix.target }} --output "dist/${{ matrix.bin }}"
+
+      - name: Firmar ad-hoc (macOS)
+        if: runner.os == 'macOS'
+        run: codesign --force --sign - "dist/${{ matrix.bin }}" || true
+
+      # En macOS se entrega un .zip con el binario + un ".command" para poder
+      # abrirlo con doble clic desde Finder (sin usar la terminal).
+      - name: Empaquetar para macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd dist
+          chmod +x "${{ matrix.bin }}"
+          launcher="Traducir TETR.IO.command"
+          cat > "$launcher" <<'SH'
+          #!/bin/bash
+          cd "$(dirname "$0")" || exit 1
+          BIN="$(ls tetrio-es-patcher-macos-* 2>/dev/null | grep -v '\.command$' | head -1)"
+          [ -z "$BIN" ] && BIN="tetrio-es-patcher"
+          chmod +x "$BIN" 2>/dev/null
+          xattr -dr com.apple.quarantine "$BIN" "$0" 2>/dev/null
+          "./$BIN"
+          status=$?
+          if [ $status -ne 0 ]; then echo; read -n1 -rsp "Hubo un error. Pulsa una tecla para cerrar..."; fi
+          SH
+          chmod +x "$launcher"
+          zip -X "${{ matrix.artifact }}" "${{ matrix.bin }}" "$launcher"
+          rm -f "${{ matrix.bin }}" "$launcher"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
