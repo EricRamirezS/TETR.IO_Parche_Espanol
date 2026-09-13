@@ -10,3 +10,7 @@ dist/
 legacy/node_modules/
 legacy/dist/
 legacy/src/payload.generated.js
+
+home.html
+tetrio.js
+TETRIO2.JS
