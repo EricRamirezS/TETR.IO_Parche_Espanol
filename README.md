@@ -18,8 +18,11 @@ tu propia instalación al aplicar el parche (ver [Aviso legal](#aviso-legal)).
 > **¿Juegas TETR.IO en el navegador (tetr.io) en vez de la app de escritorio?**
 > Este `.exe` no la traduce — un programa de escritorio no puede inyectar código
 > en una pestaña ya abierta. Para eso hay una **extensión de navegador** aparte
-> (misma traducción) en [`browser-extension/`](browser-extension/README.md),
-> instalable gratis sin pasar por ninguna tienda de pago.
+> (misma traducción), gratis:
+>
+> - **Chrome / Edge / Brave:** [Chrome Web Store](https://chromewebstore.google.com/detail/tetrio-en-español/bgnmapfkbjocebaofkoidigmhgkgilgp)
+> - **Firefox / otros / instalación manual:** ver
+>   [`browser-extension/`](browser-extension/README.md)
 
 ---
 
@@ -105,89 +108,6 @@ instante — el asistente reintenta varios segundos antes de rendirse.
 **TETR.IO instalado como Flatpak / Snap / AppImage.**
 No se puede parchear una imagen de solo lectura. Habría que extraer `app.asar`,
 indicárselo con «Cambiar carpeta…» y volver a montarlo a mano.
-
----
-
-## Para desarrolladores
-
-Proyecto **.NET 8 + Avalonia** (UI nativa, sin webview). El asar se lee y
-reescribe con código propio (`Core/Asar.cs`), sin librerías externas.
-
-```
-Core/
-  Asar.cs        Formato .asar: lectura, extracción y reescritura de un archivo.
-  Locator.cs     Localiza app.asar (junto al ejecutable, rutas por SO, o a mano).
-  Patcher.cs     Aplicar / deshacer: copia de seguridad, versión, línea divisoria.
-  Elevation.cs   Relanza con permisos: runas (Win) / osascript (mac) / pkexec (Linux).
-  PatchAssets.cs La traducción incrustada + constantes.
-Views/MainWindow.axaml(.cs)   El asistente (3 pasos: inicio → progreso → resultado).
-Assets/translation.js         SOLO el código inyectado (recurso incrustado).
-legacy/                        La versión anterior en Node.js, como referencia.
-```
-
-### Compilar / probar (desarrollo)
-
-```sh
-dotnet build           # compila; deja bin/ con ~30 DLL (NO es la salida final)
-dotnet run             # abre la interfaz
-
-# Núcleo sin interfaz, para pruebas:
-dotnet run -- --worker --action apply   --asar "RUTA/app.asar" --result out.json
-dotnet run -- --worker --action restore --asar "RUTA/app.asar" --result out.json
-```
-
-### Generar el ejecutable de distribución (UN solo archivo)
-
-```sh
-./build.sh                       # para tu sistema      -> dist/tetrio-es-patcher-<rid>[.exe]
-./build.sh linux-x64 osx-arm64   # para varios RID
-# Windows:  ./build.ps1
-```
-
-Por debajo es `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true`.
-
-> **La salida es UN único archivo** en `dist/`. Si ves cientos de archivos, estás
-> mirando `bin/…` (compilación de desarrollo) en vez de `dist/`. Ejecuta
-> `./build.sh` y usa lo que quede en `dist/`.
-
-### Nueva versión
-
-1. Actualiza `Assets/translation.js` y/o el código.
-2. Sube `<Version>` en `TetrioEsPatcher.csproj`.
-3. En [`CHANGELOG.md`](CHANGELOG.md), mueve lo de **`[Sin publicar]`** a una
-   sección nueva `## [X.Y.Z] - AAAA-MM-DD` (mismo número que el paso 2). El
-   workflow busca ese encabezado exacto para armar las notas de lanzamiento;
-   si no lo encuentra, publica igual pero sin registro de cambios (avisa con
-   un `::warning::` en el log de Actions).
-4. `git tag vX.Y.Z && git push --follow-tags`.
-
-El workflow **Release** compila los 5 binarios (`win-x64`, `osx-x64/arm64`,
-`linux-x64/arm64`), envuelve el de macOS en un `.app`, y publica todo en una
-*GitHub Release* con `SHA256SUMS.txt`. Las notas de lanzamiento se arman en
-español a partir de [`.github/release_notes_template.md`](.github/release_notes_template.md)
-(descarga, avisos, instalación, deshacer) más la sección del `CHANGELOG.md`
-que corresponda al tag.
-
-### Cómo funciona el parche
-
-`preload.js` de TETR.IO es un *stub* de ~184 bytes. El parche escribe:
-
-```
-<preload.js propio de TETR.IO, sin tocar>
-
-// ===== TETRIO-ES-PATCH:INJECT-BOUNDARY vX.Y.Z =====
-<Assets/translation.js>
-```
-
-`Asar.RewriteSingleFile` reconstruye el `app.asar` copiando **todos los demás
-archivos byte a byte** y recalculando solo los offsets y la integridad SHA-256 de
-`preload.js`. Verificado: la extracción completa del resultado coincide con el
-original en los 720 archivos restantes. El diseño «unpacked»
-(`node_modules/register-scheme`) se conserva igual que en el original.
-
-La compilación actual de TETR.IO trae el *fuse*
-`EnableEmbeddedAsarIntegrityValidation` **desactivado**, así que un `app.asar`
-modificado carga sin problemas.
 
 ---
 

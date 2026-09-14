@@ -9,7 +9,10 @@
 # Editar en Assets/src/, correr este script, y luego seguir el flujo de
 # siempre (browser-extension/sync.ps1, build.ps1, etc).
 $ErrorActionPreference = "Stop"
+$originalLocation = Get-Location
 Set-Location $PSScriptRoot
+
+try {
 
 ./check-duplicates.ps1
 if ($LASTEXITCODE -ne 0) { throw "check-duplicates.ps1 encontro duplicados; revisa el detalle de arriba." }
@@ -101,3 +104,7 @@ try {
 
 $bytes = (Get-Item "$PSScriptRoot/translation.js").Length
 Write-Host "translation.js regenerado y minificado ($bytes bytes)."
+
+} finally {
+    Set-Location $originalLocation
+}

@@ -25,7 +25,7 @@ uso propio o para compartirlo con la comunidad hay alternativas gratis:
 |---|---|---|
 | **Chrome / Edge / Brave** (modo desarrollador) | Gratis | "Cargar descomprimida" — ver abajo. Es lo más rápido. |
 | **Firefox** (temporal) | Gratis | `about:debugging` → "Cargar complemento temporal". Se borra al cerrar Firefox. |
-| **Firefox, permanente, sin listar** | Gratis | Subir como *Unlisted* a addons.mozilla.org: Mozilla la firma pero no aparece en las búsquedas públicas. Da un `.xpi` instalable siempre. |
+| **Firefox, listado público** | Gratis | Publicar en addons.mozilla.org (canal *listed*): pasa por revisión de Mozilla y luego aparece en las búsquedas, instalable por cualquiera con un clic. |
 | **Microsoft Edge Add-ons** | Gratis | A diferencia de Chrome, publicar en la tienda de Edge no tiene cuota. |
 | **Chrome Web Store** (listado público) | ~5 USD una vez | Solo si quieres que aparezca en las búsquedas de la Chrome Web Store. |
 
@@ -41,7 +41,8 @@ uso propio o para compartirlo con la comunidad hay alternativas gratis:
 1. `about:debugging#/runtime/this-firefox`
 2. **«Cargar complemento temporal…»** → elige `browser-extension/manifest.json`.
 3. Abre o recarga tetr.io.
-   *(Se desinstala al cerrar Firefox; para algo permanente, ver la opción "Unlisted" de arriba.)*
+   *(Se desinstala al cerrar Firefox; para algo permanente, instala la versión
+   publicada en addons.mozilla.org — ver arriba.)*
 
 ## Actualizar la traducción
 
@@ -131,17 +132,33 @@ archivo de compilación).
 3. *Secrets* de GitHub:
    - `FIREFOX_JWT_ISSUER`
    - `FIREFOX_JWT_SECRET`
+4. El workflow usa el canal **`listed`** (listado público, aparece en las
+   búsquedas de addons.mozilla.org e instalable por cualquiera con un clic),
+   usando el `gecko.id` fijo de `manifest.json` (no lo cambies luego, o
+   Mozilla lo tratará como una extensión distinta).
 
-   No hace falta alta manual previa: `web-ext sign --channel=unlisted` crea la
-   ficha la primera vez, usando el `gecko.id` fijo de `manifest.json` (no lo
-   cambies luego, o Mozilla lo tratará como una extensión distinta). El canal
-   *unlisted* no pasa por la cola de revisión pública: valida y firma
-   automáticamente en minutos, y da un `.xpi` descargable como artefacto del
-   workflow.
+   A diferencia del canal *unlisted*, la **primera** publicación de una ficha
+   *listed* sí requiere un alta manual una vez, con nombre, resumen,
+   descripción, categoría y al menos una captura de pantalla — eso no viaja
+   por la API. Después de esa primera vez, el workflow sube cada versión
+   nueva sola. Las versiones *listed* pasan por la cola de revisión de
+   Mozilla (puede tardar de horas a un par de días), a diferencia del canal
+   *unlisted* que firmaba al instante.
+
+   > **Si el `gecko.id` ya existe en AMO** (por ejemplo, ya publicaste una
+   > versión *unlisted* antes, como en este proyecto): **NO** uses
+   > "Enviar un nuevo complemento" — con el mismo id da el error *"Se
+   > encontró una identificación de complemento duplicada"*. En vez de eso,
+   > entra a [Mis complementos](https://addons.mozilla.org/developers/addons),
+   > abre la ficha que ya existe → **"Cargar nueva versión"** → sube el
+   > `.zip` (`./package.ps1` / `./package.sh`) → en el paso de distribución
+   > elige **"On this site"** (listado) en vez de "On your own" — ahí es
+   > donde se completa nombre/resumen/descripción/categoría/captura la
+   > primera vez. Reutiliza la misma ficha; no crea una nueva.
 
 ## Estado
 
 `manifest.json` (Manifest V3, compatible con Chrome/Edge/Firefox 109+) inyecta
-`content.js` en `https://tetr.io/*`. Sin iconos todavía — no son obligatorios
-para "cargar descomprimida" ni para Firefox, pero Chrome y Edge sí los piden en
-el alta manual inicial de la ficha.
+`content.js` en `https://tetr.io/*`. Los iconos (`icons/icon{16,32,48,128}.png`,
+generados desde `logotetrioesp.png`) ya están incluidos y declarados en
+`manifest.json`.
