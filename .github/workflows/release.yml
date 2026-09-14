@@ -17,7 +17,8 @@ jobs:
       matrix:
         include:
           - { os: windows-latest,   rid: win-x64,    artifact: tetrio-es-patcher-windows-x64.exe }
-          - { os: macos-13,         rid: osx-x64,     artifact: tetrio-es-patcher-macos-x64.zip }
+          # macos-13 se retiro (dic. 2025); macos-15-intel es el reemplazo para Intel x64.
+          - { os: macos-15-intel,   rid: osx-x64,     artifact: tetrio-es-patcher-macos-x64.zip }
           - { os: macos-14,         rid: osx-arm64,   artifact: tetrio-es-patcher-macos-arm64.zip }
           - { os: ubuntu-latest,    rid: linux-x64,   artifact: tetrio-es-patcher-linux-x64 }
           # Gratis para repos públicos; si el repo es privado, elimina esta fila.

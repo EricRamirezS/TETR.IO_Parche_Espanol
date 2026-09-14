@@ -30,6 +30,11 @@ jobs:
           CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          # Requerido desde que chrome-webstore-upload paso a la API v2 de la
+          # Chrome Web Store: el ID de la cuenta de desarrollador (Publisher),
+          # no el ID de la extension. Se ve en la URL del Developer Dashboard
+          # (chrome.google.com/webstore/devconsole/<PUBLISHER_ID>/...).
+          PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
         run: |
           npx --yes chrome-webstore-upload-cli upload --source extension-package.zip
           npx --yes chrome-webstore-upload-cli publish
