@@ -11,8 +11,7 @@ function matchCapitalization(original, translated) {
     return translated;
 }
 
-// Repetido en custom_game, custom_objective y custom_meta: recorre las filas
-// de configuracion de sala y traduce su etiqueta (por data-index) y su title.
+// Repetido en custom_game, custom_objective y custom_meta.
 function applyRoomConfigLabels(e, labels, titles) {
     e.querySelectorAll(".room_config_row").forEach(row => {
         const item = row.querySelector("[data-index]");
@@ -34,8 +33,7 @@ function applyRoomConfigLabels(e, labels, titles) {
     });
 }
 
-// Repetido en custom_game, custom_objective y custom_meta: aplica las listas
-// de opciones (formato "valor,ETIQUETA,descripcion;...") por data-index.
+// Repetido en custom_game, custom_objective y custom_meta.
 function applyDataItems(e, dataItems) {
     Object.entries(dataItems).forEach(([index, value]) => {
         const item = e.querySelector(`[data-index="${index}"]`);
@@ -46,20 +44,17 @@ function applyDataItems(e, dataItems) {
     });
 }
 
-// Repetido en room_room, room_match y room_game: traduce las etiquetas de
-// .room_config_label buscando por su texto actual (en vez de por data-index).
+// Repetido en room_room, room_match y room_game.
 function applyLabelsByText(e, labels) {
     e.querySelectorAll(".room_config_label").forEach(label => translateByDict(label, labels));
 }
 
-// Repetido en room_room, room_match y room_game: traduce el atributo title de
-// cualquier elemento que lo tenga, buscando por su valor actual.
+// Repetido en room_room, room_match y room_game.
 function applyTitlesByAttr(e, titles) {
     e.querySelectorAll("[title]").forEach(element => translateAttrByDict(element, "title", titles));
 }
 
-// Repetido en custom_game, custom_objective, custom_meta, room_room,
-// room_match y room_game: el texto de ayuda al pie del panel de opciones.
+// Repetido en custom_game/objective/meta y room_room/match/game.
 function applyMoreInfoHint(e) {
     const moreInfo = e.querySelector(".rc_moreinfo");
 
@@ -328,9 +323,7 @@ function custom_meta(e) {
 
     applyRoomConfigLabels(e, labels, titles);
 
-    // Los 5 espacios de contador (izquierdos 1-4 y derecho) ofrecen exactamente
-    // las mismas opciones; antes este bloque de 12 lineas estaba copiado 5
-    // veces sin ninguna diferencia entre copias.
+    // Los 5 espacios de contador (izquierdos 1-4 y derecho) ofrecen las mismas opciones.
     const slotCounterDataItems =
         "---empty---,Vacio,dejar este espacio vacio;" +
         "score,SCORE,mostrar la puntuacion en este espacio;" +
@@ -367,9 +360,7 @@ function custom_meta(e) {
     applyMoreInfoHint(e);
 }
 
-// slot_blitz_counter y slot_40l_counter son identicas salvo por la lista de
-// metricas disponibles (BLITZ tiene "timer" + "level"; 40 LINEAS tiene
-// "stopwatch" y no tiene "level"). Una sola implementacion parametrizada.
+// slot_blitz_counter y slot_40l_counter solo difieren en las metricas disponibles.
 function slot_counter(e, position, side, dataItems) {
     const labels = {
         1: "espacio izquierdo 1",

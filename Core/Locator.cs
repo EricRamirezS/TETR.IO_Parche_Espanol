@@ -60,10 +60,7 @@ public static class Locator
     /// <summary>Devuelve la ruta a app.asar o null si no se encontró automáticamente.</summary>
     public static string? AutoDetect() => Candidates().FirstOrDefault(File.Exists);
 
-    /// <summary>
-    /// Resuelve una ruta indicada por el usuario: acepta el propio app.asar, la
-    /// carpeta resources, la raíz de la instalación o un bundle .app de macOS.
-    /// </summary>
+    /// <summary>Acepta el propio app.asar, la carpeta resources, la raíz de la instalación o un bundle .app de macOS.</summary>
     public static string ResolveUserPath(string input)
     {
         var p = Path.GetFullPath(input.Trim().Trim('"', '\''));

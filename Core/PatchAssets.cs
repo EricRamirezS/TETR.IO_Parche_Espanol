@@ -3,12 +3,7 @@ using System.Text;
 
 namespace TetrioEsPatcher.Core;
 
-/// <summary>
-/// La traducción incrustada y las constantes del parche.
-/// <c>Assets/translation.js</c> contiene SOLO el código inyectado; nada del
-/// código fuente de TETR.IO. El preload.js original se toma del app.asar del
-/// usuario en el momento de parchear.
-/// </summary>
+/// <summary>La traducción incrustada y las constantes del parche. <c>Assets/translation.js</c> contiene SOLO el código inyectado, nada de TETR.IO.</summary>
 public static class PatchAssets
 {
     /// <summary>Marca única que delimita el bloque inyectado dentro de preload.js.</summary>

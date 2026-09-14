@@ -13,15 +13,10 @@ function text(e, t) {
     e.innerHTML = t;
 }
 
-// La tecla "Meta" es la de Windows en Windows/Linux, pero es CMD (⌘) en Mac
-// -> se detecta la plataforma para no mostrar "WINDOWS" en un Mac.
+// La tecla "Meta" es Windows en Windows/Linux, pero CMD (⌘) en Mac.
 const IS_MAC_PLATFORM = /Mac/.test(navigator.platform || "");
 
-// Motivos de cierre del websocket ("ribbon", nombre interno de TETR.IO para
-// su conexion) que aparecen como "REASON: X" en el modal de error de
-// conexion. Vienen de it._CLOSE_CODES en tetrio.js + "ping timeout"/
-// "failed to connect". Un motivo que no esta en este diccionario (texto
-// libre del servidor) se deja tal cual.
+// "REASON: X" del modal de error de conexion; vienen de it._CLOSE_CODES en tetrio.js. Un motivo fuera de este diccionario (texto libre del servidor) se deja tal cual.
 const CONNECTION_CLOSE_REASONS = {
     "ribbon closed normally": "conexion cerrada normalmente",
     "client closed ribbon": "el cliente cerro la conexion",
@@ -41,11 +36,7 @@ const CONNECTION_CLOSE_REASONS = {
     "failed to connect": "no se pudo conectar"
 };
 
-// Nombre de tecla mostrado en la tabla de controles personalizados: viene
-// directo del KeyboardEvent.code del navegador, en mayusculas (ARROWLEFT,
-// SHIFTLEFT, KEYZ, DIGIT1...). Cualquier tecla del teclado es valida, asi
-// que el diccionario cubre todo el layout estandar (no solo las teclas que
-// usa la configuracion por defecto).
+// Claves = KeyboardEvent.code en mayusculas (ARROWLEFT, SHIFTLEFT, KEYZ...); cubre todo el layout estandar, no solo las teclas por defecto.
 const KEYBOARD_CODE_NAMES = {
     "SPACE": "ESPACIO",
     "TAB": "TABULADOR",
@@ -118,11 +109,7 @@ function normalizeKeybindName(value) {
     return value;
 }
 
-// Las tablas de referencia (controls_keybinds_list_guideline/_wasd) ya
-// traen las teclas en el formato corto de home.html ("LEFT, NUMPAD4",
-// "UP (or W)..."), no en el formato KeyboardEvent.code de la tabla
-// personalizada -> palabra por palabra en vez de normalizeKeybindName.
-// CTRL, ESCAPE, NUMPAD y las letras/digitos sueltos se dejan igual.
+// Formato corto de home.html ("LEFT, NUMPAD4", "UP (or W)..."), no KeyboardEvent.code: se traduce palabra por palabra en vez de normalizeKeybindName.
 const KEYBIND_REFERENCE_WORDS = {
     "LEFT": "IZQUIERDA",
     "RIGHT": "DERECHA",
@@ -143,11 +130,7 @@ function translateKeybindReference(value) {
     );
 }
 
-// El timer de tetra_zenithtimer/zenith_zenithtimer/zenithresults_zenithtimer
-// tiene dos plantillas segun tetrio.js: "CYCLED <b>X</b> AGO" (paso) o
-// "CYCLES IN <b>X</b>" (futuro) -> antes se forzaba siempre el texto de
-// "futuro" y quedaba un " AGO" suelto sin traducir cuando era "pasado".
-// Se distinguen por si hay texto con "AGO" despues del <b>.
+// tetrio.js usa dos plantillas: "CYCLED <b>X</b> AGO" (pasado) o "CYCLES IN <b>X</b>" (futuro); se distinguen por si hay texto "AGO" despues del <b>.
 function translateZenithTimer(timer, futureText, pastText) {
     if (!timer) return;
 
@@ -187,7 +170,6 @@ function translateZenithTimer(timer, futureText, pastText) {
     }
 }
 
-// Busca el texto actual en un diccionario y lo reemplaza si hay traduccion.
 // Devuelve true si tradujo algo (para encadenar "si no, prueba otra cosa").
 function translateByDict(e, dict) {
     const value = e.textContent.trim();
@@ -214,8 +196,7 @@ function translateAttrByDict(e, attrName, dict) {
     return false;
 }
 
-// Sustituye un termino dentro de un texto mas largo, en vez de reemplazarlo
-// completo como translateByDict.
+// Sustituye un termino dentro del texto, en vez de reemplazarlo completo como translateByDict.
 function replaceTerm(e, from, to) {
     const value = e.textContent;
     const translated = value.replace(from, to);
@@ -268,9 +249,7 @@ const ZENITH_MOD_NAMES = {
     "DUO": "DUO"
 };
 
-// Mismos mods en Title Case (asi los pone tetrio.js en el atributo "title"
-// de los iconos de mods), con las 11 variantes "reversed". Claves distintas
-// de ZENITH_MOD_NAMES (en MAYUSCULAS) porque JS no ignora mayus/minus.
+// Mismos mods en Title Case (asi va el atributo "title" de tetrio.js); claves distintas de ZENITH_MOD_NAMES (en MAYUSCULAS) porque JS distingue mayus/minus.
 const ZENITH_MOD_TITLES = {
     "Invisible": "Invisible",
     "Messier Garbage": "Basura Mas Desordenada",
@@ -294,8 +273,7 @@ const ZENITH_MOD_TITLES = {
     "Bleeding Hearts": "Corazones Sangrantes"
 };
 
-// Aplica ZENITH_MOD_TITLES a todos los <img title="..."> de mods de Zenith
-// dentro de root (resultados, records, party, embeds de chat).
+// Cubre resultados, records, party y embeds de chat.
 function translateModTitles(root) {
     root.querySelectorAll("img[title]").forEach(img => translateAttrByDict(img, "title", ZENITH_MOD_TITLES));
 }
@@ -309,8 +287,7 @@ const RECORD_LIST_GAMEMODES = {
     "TETRA LEAGUE": "LIGA TETRA"
 };
 
-// Compartido por tetra_myrecords (mis records) y tetra_records (leaderboard
-// global): pintan su lista con las mismas clases.
+// Compartido por tetra_myrecords y tetra_records (leaderboard): misma estructura.
 function translateRecordList(e) {
     e.querySelectorAll(".scroller_block.nothing").forEach(el => {
         if (el.textContent.trim() === "NO RECORDS") {
@@ -379,9 +356,7 @@ function translateRecordList(e) {
     translateModTitles(e);
 }
 
-// Compartido por "notifications" (toast) y "social_notifications_content"
-// (panel lateral): misma estructura de logro (h1 + nombre + descripcion +
-// "Previous:"/"New:").
+// Compartido por el toast de notificaciones y el panel lateral: misma estructura.
 function applyAchievementNotification(notification) {
     const h1 = notification.querySelector("h1");
 

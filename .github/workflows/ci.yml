@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Duplicados en Assets/src/*.js
+        run: ./Assets/check-duplicates.sh
+
+      - name: Reconstruir Assets/translation.js
+        run: ./Assets/build-translation.sh
+
+      - name: manifest.json de la extensión es JSON válido
+        run: node -e "JSON.parse(require('fs').readFileSync('browser-extension/manifest.json', 'utf-8'))"
+
+      - name: dotnet build
+        run: dotnet build TetrioEsPatcher.csproj -c Release
+
+      - name: dotnet test
+        run: dotnet test TetrioEsPatcher.Tests/TetrioEsPatcher.Tests.csproj -c Release

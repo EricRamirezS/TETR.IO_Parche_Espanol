@@ -16,10 +16,7 @@ public sealed record InstallInfo(
     bool BackupExists,
     bool NeedsElevation);
 
-/// <summary>
-/// Aplica / deshace la traducción sobre el app.asar de TETR.IO.
-/// Portado de la versión Node (legacy/src/patch.js).
-/// </summary>
+/// <summary>Aplica / deshace la traducción sobre el app.asar de TETR.IO.</summary>
 public static class Patcher
 {
     public delegate void Log(string line);
@@ -50,7 +47,7 @@ public static class Patcher
         }
         catch
         {
-            // se queda como Unknown
+            // Se queda como Unknown.
         }
 
         return new InstallInfo(
@@ -150,9 +147,7 @@ public static class Patcher
         SafeDelete(staged);
         if (Directory.Exists(staged + ".unpacked")) Directory.Delete(staged + ".unpacked", true);
 
-        // La base define el diseño (qué va "unpacked"): la copia pristina si la
-        // tenemos, si no el propio app.asar. Los archivos "unpacked" reales se
-        // toman de la carpeta .unpacked del app.asar en vivo.
+        // Diseño "unpacked" de la copia pristina si existe, si no del propio app.asar; el contenido real sale de .unpacked en vivo.
         var baseAsar = (File.Exists(backup) && !backupStale) ? backup : asarPath;
         Asar.RewriteSingleFile(baseAsar, "preload.js", injectedBytes, staged,
             unpackedSourceDir: Directory.Exists(unpackedDir) ? unpackedDir : null);
@@ -256,10 +251,7 @@ public static class Patcher
         }
     }
 
-    /// <summary>
-    /// Detecta si TETR.IO sigue en ejecución (bloquearía app.asar) y lo cierra.
-    /// Primero con delicadeza, luego a la fuerza si no responde.
-    /// </summary>
+    /// <summary>Cierra TETR.IO si sigue en ejecución (bloquearía app.asar); primero con delicadeza, luego a la fuerza.</summary>
     private static void EnsureTetrioClosed(string installDir, Log log)
     {
         var running = TetrioProcess.FindRunning(installDir);
@@ -282,11 +274,7 @@ public static class Patcher
         if (File.Exists(path)) File.Delete(path);
     }
 
-    /// <summary>
-    /// Copia reintentando unos segundos: un antivirus puede tener el archivo recién
-    /// escrito bloqueado un instante, o TETR.IO puede tardar en soltarlo tras cerrarse.
-    /// Si sigue bloqueado, lanza un error explicando qué hacer.
-    /// </summary>
+    /// <summary>Reintenta unos segundos: un antivirus o TETR.IO recién cerrado puede tener el archivo bloqueado un instante.</summary>
     private static void CopyWithRetry(string src, string dst, int attempts = 10, int delayMs = 300)
     {
         for (int i = 1; i <= attempts; i++)
@@ -310,8 +298,7 @@ public static class Patcher
             }
             catch (UnauthorizedAccessException ex)
             {
-                // En Windows, "acceso denegado" al sobrescribir suele ser el mismo caso
-                // (archivo bloqueado) disfrazado de otro tipo de excepción.
+                // En Windows, "acceso denegado" al sobrescribir suele ser el mismo archivo bloqueado, disfrazado de otra excepción.
                 if (i == attempts)
                     throw new IOException(
                         $"No se pudo escribir \"{Path.GetFileName(dst)}\" (acceso denegado). " +

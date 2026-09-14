@@ -2,15 +2,9 @@
 ===== INTERCEPCION DE ASSETS (/res/) ====
 ====================================== */
 
-// Algunas imagenes de /res/ las carga tetrio.js directo a un <canvas>/WebGL
-// en vez de un <img> del DOM -> hay que sustituirlas ANTES de que el juego
-// las pida, interceptando fetch/XHR/Image igual que cualquier cargador de
-// assets. Por eso corre lo antes posible (preload.js, o document_start en
-// la extension).
+// Algunas imagenes de /res/ tetrio.js las carga directo a canvas/WebGL, sin <img> de DOM: hay que interceptar fetch/XHR/Image ANTES de que las pida.
 
-// Sin extension a proposito: la clave es la RUTA que pide el juego, no el
-// formato del reemplazo (asi un .webp puede reemplazar un .png). Solo quita
-// el ULTIMO "punto+extension" (p.ej. "base.2x.png" -> "base.2x").
+// Sin extension a proposito: la clave es la RUTA que pide el juego, no el formato del reemplazo (asi un .webp puede reemplazar un .png).
 function stripExtension(path) {
     return path.replace(/\.[a-zA-Z0-9]+$/, "");
 }

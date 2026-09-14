@@ -1,6 +1,5 @@
 const translations = {
-    // Se llena async con .innerHTML tras el modal de error de conexion, con
-    // uno de estos 3 mensajes fijos.
+    // Se llena async tras el modal de error de conexion (3 mensajes fijos).
     "networkerror_fault_indicator": (e) => translateByDict(e, {
         "this disconnect was detected to be caused by your network connection.":
             "<br>este corte se detecto como causado por tu conexion de red.",
@@ -233,9 +232,7 @@ const translations = {
         if (copy) copy.textContent = "haz clic para copiar la url";
     },
 
-    // "{GAMEMODE} KNOCKOUT" (ft=1, wb=1) -> el gamemode varia (ROYALE, 40
-    // LINES, etc.), asi que se detecta el sufijo generico "KNOCKOUT" y se
-    // reordena en vez de traducir la palabra sola en el mismo orden.
+    // El gamemode varia (ROYALE, 40 LINES...): reordena "X KNOCKOUT" generico.
     "roommodeblurb": (e) => {
         const value = e.textContent.trim();
         const knockoutMatch = value.match(/^(.+) KNOCKOUT$/);
@@ -263,8 +260,6 @@ const translations = {
 
         e.querySelectorAll("td").forEach(td => translateByDict(td, dict));
     },
-    //"room_content_name": (e) => text(e, "NOMBRE DE LA SALA"),
-
     "room_opts_welcome": (e) => text(e, "BIENVENIDA"),
     "room_opts_room": (e) => text(e, "SALA"),
     "room_opts_match": (e) => text(e, "PARTIDA"),
@@ -290,8 +285,7 @@ const translations = {
         }
     },
     "swb_addendum": (e) => text(e, "haz clic para cambiar a ESPECTADORES"),
-    // Antes forzaba siempre "esperando jugadores", sin importar el estado
-    // real (activo con cuenta regresiva, en partida, o vacio).
+    // Traduce segun el estado real: cuenta regresiva, en partida, o vacio.
     "room_auto_info": (e) => {
         if (translateByDict(e, {
             "waiting for players": "esperando jugadores",
@@ -3188,8 +3182,7 @@ const translations = {
         if (ready) text(ready, "LISTO!");
     },
 
-    // Antes forzaba siempre "LISTO", incluso cuando el texto real era
-    // "WAITING" (el otro jugador del Duo aun no confirmo listo).
+    // El otro jugador del Duo puede no haber confirmado listo aun.
     "zenith_party_ready_label": (e) => translateByDict(e, {
         "READY": "LISTO",
         "WAITING": "ESPERANDO"
@@ -3496,10 +3489,7 @@ const translations = {
             text(welcome, "bienvenido a TETR.IO");
         }
 
-        // ":scope > p" a proposito: e (#entry_form) tambien contiene
-        // .preform con sus propios <p> (traducidos arriba) -> un
-        // querySelectorAll("p") sin scope los cuenta tambien y desplaza
-        // estos indices, pisando "jugadores totales"/"partidas jugadas".
+        // :scope > p a proposito: sin scope tambien cuenta los <p> de .preform y desplaza estos indices.
         const paragraphs = e.querySelectorAll(":scope > p");
 
         if (paragraphs[0]) {
@@ -3702,10 +3692,7 @@ const translations = {
             attr(img, "src", replacementImages["altpolicy"]);
         }
 
-        // No se reconstruye el h1 completo: el <span> ya trae el nombre de
-        // usuario puesto por tetrio.js (xt("registeralt_username")
-        // .textContent = ...) antes de que este codigo corra. Sobrescribir
-        // el innerHTML del h1 crea un span nuevo vacio y lo pierde.
+        // No reconstruye el h1: el <span> ya trae el username puesto por tetrio.js; sobrescribir el innerHTML lo perderia.
         if (h1) {
             h1.childNodes.forEach(node => {
                 if (node.nodeType !== Node.TEXT_NODE) return;
@@ -4052,11 +4039,6 @@ const translations = {
         e.firstChild.textContent = e.firstChild.textContent.replace("players loaded", "jugadores cargados");
     },
 
-    // NOTA: hasta la limpieza de este archivo, "social_status" estaba
-    // definido dos veces; la segunda (una copia local incompleta de
-    // statusTranslations, sin "BLOCKED" y sin negrita en varios estados)
-    // ganaba silenciosamente. Se unifico en una sola version, usando el
-    // diccionario completo.
     "social_status": (e) => {
         const original = e.textContent.trim();
         const translated = statusTranslations[original];
@@ -5865,8 +5847,7 @@ const translations = {
 
         /* ELIMINANDO CUENTA (nombre de usuario) */
 
-        // Antes comprobaba el titulo exacto "DELETING SKYLUR" y nunca
-        // coincidia para otro usuario. Ahora es un prefijo generico.
+        // Prefijo generico: el username varia.
         e.querySelectorAll(".oob_modal").forEach(dialog => {
             const title = dialog.querySelector("h1");
 
@@ -6088,12 +6069,7 @@ const translations = {
 
         /* CONEXION Y SERVIDOR */
 
-        // Dos variantes de "CONNECTION ERROR" con el mismo titulo. El msg
-        // original tiene "</p><p>" sueltos que el navegador NO separa en
-        // parrafos hermanos (quedan <p> anidados dentro del primero) -> no
-        // se puede asumir "p" ni una posicion fija. Se recorren
-        // TODOS los <p> del modal (esten anidados o no) y se traduce el
-        // texto propio de cada uno por contenido, no por indice.
+        // El "</p><p>" suelto del msg original queda anidado, no hermano: se recorren todos los <p> y se traduce por contenido, no por indice.
         e.querySelectorAll(".oob_modal").forEach(dialog => {
             const title = dialog.querySelector("h1");
 

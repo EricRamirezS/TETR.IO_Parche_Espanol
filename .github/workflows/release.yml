@@ -74,6 +74,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -83,27 +85,49 @@ jobs:
       - name: Checksums
         run: cd dist && sha256sum * | tee SHA256SUMS.txt
 
-      - name: Generar notas de lanzamiento (CHANGELOG.md + plantilla)
+      - name: Archivar "[Sin publicar]" del CHANGELOG.md y generar notas de lanzamiento
         env:
           REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           VERSION="${TAG#v}"
+          DATE="$(date -u +%Y-%m-%d)"
 
-          # Extrae el bloque entre "## [VERSION] - fecha" y el siguiente "## [".
-          # index() en vez de un patron regex: evita pelear con el doble
-          # escapado de "[" "]" "." entre el string literal de awk y el
-          # motor de regex ("[1.2.3]" se interpretaba como clase de caracteres).
-          CHANGELOG_SECTION="$(awk -v target="## [$VERSION]" '
-            index($0, target) == 1 { found=1; next }
-            found && index($0, "## [") == 1 { exit }
-            found { print }
-          ' CHANGELOG.md)"
+          # index() en vez de un patron regex: evita pelear con el doble escapado de
+          # "[" "]" "." entre el string literal de awk y el motor de regex
+          # ("[1.2.3]" se interpretaba como clase de caracteres).
+          extract_section() {
+            awk -v target="$1" '
+              index($0, target) == 1 { found=1; next }
+              found && index($0, "## [") == 1 { exit }
+              found { print }
+            ' CHANGELOG.md
+          }
+
+          # Flujo normal: toma "[Sin publicar]" tal cual, sin pedir que nadie la
+          # renombre a mano antes de taguear. Si no hay nada ahi (ya se renombro a
+          # mano, o alguien olvido escribir algo), respaldo: busca la seccion que ya
+          # coincida con el tag.
+          CHANGELOG_SECTION="$(extract_section "## [Sin publicar]")"
+          RENAME_NEEDED=1
+          if [ -z "$(printf '%s' "$CHANGELOG_SECTION" | tr -d '[:space:]')" ]; then
+            CHANGELOG_SECTION="$(extract_section "## [$VERSION]")"
+            RENAME_NEEDED=0
+          fi
 
           if [ -z "$(printf '%s' "$CHANGELOG_SECTION" | tr -d '[:space:]')" ]; then
-            echo "::warning::No se encontro '## [$VERSION]' en CHANGELOG.md. Agrega esa seccion antes de publicar para que las notas de lanzamiento incluyan el registro de cambios."
+            echo "::warning::CHANGELOG.md no tiene nada en '## [Sin publicar]' ni en '## [$VERSION]'. Las notas de lanzamiento no incluiran registro de cambios."
             CHANGELOG_SECTION="_(sin registro de cambios para esta version en CHANGELOG.md)_"
+            RENAME_NEEDED=0
+          fi
+
+          if [ "$RENAME_NEEDED" -eq 1 ]; then
+            awk -v ver="## [$VERSION] - $DATE" '
+              index($0, "## [Sin publicar]") == 1 { print "## [Sin publicar]"; print ""; print ver; next }
+              { print }
+            ' CHANGELOG.md > /tmp/CHANGELOG.md.new
+            mv /tmp/CHANGELOG.md.new CHANGELOG.md
           fi
 
           envsubst '${REPO} ${TAG}' < .github/release_notes_template.md > /tmp/release_template.md
@@ -114,6 +138,24 @@ jobs:
             /<!--CHANGELOG-->/ { print changelog; next }
             { print }
           ' /tmp/release_template.md > RELEASE_NOTES.md
+
+      - name: Publicar el CHANGELOG.md archivado en main
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md sin cambios; nada que archivar."
+            exit 0
+          fi
+          cp CHANGELOG.md /tmp/CHANGELOG.md.archived
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          cp /tmp/CHANGELOG.md.archived CHANGELOG.md
+          git add CHANGELOG.md
+          git commit -m "chore: archiva el changelog de ${{ github.ref_name }} [skip ci]"
+          git push origin main
 
       - uses: softprops/action-gh-release@v2
         with:

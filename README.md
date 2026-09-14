@@ -1,28 +1,19 @@
 # tetrio-es-patcher
 
-Aplicación de escritorio que traduce **TETR.IO Desktop al español**. Es un
-asistente gráfico sencillo: elige *Aplicar* o *Deshacer* y listo. No hay que usar
-la terminal ni instalar nada.
+Parche que traduce **TETR.IO Desktop al español**. 
 
-- **Un solo ejecutable**, sin dependencias. El runtime va dentro (no necesitas
-  .NET, ni Node, ni nada).
 - Windows, macOS y Linux.
 - Guarda una copia de seguridad y permite volver al original en un clic.
-- Pide permisos de administrador solo si hace falta (UAC en Windows, diálogo de
-  contraseña en macOS).
 
-La traducción se inyecta en `preload.js` dentro de `resources/app.asar`. Este
-repositorio **no contiene código de TETR.IO**: el `preload.js` original se lee de
-tu propia instalación al aplicar el parche (ver [Aviso legal](#aviso-legal)).
+Este repositorio **no contiene código de TETR.IO**, solo la traducción (ver
+[Aviso legal](#aviso-legal)).
 
 > **¿Juegas TETR.IO en el navegador (tetr.io) en vez de la app de escritorio?**
-> Este `.exe` no la traduce — un programa de escritorio no puede inyectar código
-> en una pestaña ya abierta. Para eso hay una **extensión de navegador** aparte
+> Para eso hay una **extensión de navegador** aparte
 > (misma traducción), gratis:
 >
-> - **Chrome / Edge / Brave:** [Chrome Web Store](https://chromewebstore.google.com/detail/tetrio-en-español/bgnmapfkbjocebaofkoidigmhgkgilgp)
-> - **Firefox / otros / instalación manual:** ver
->   [`browser-extension/`](browser-extension/README.md)
+> - **Chrome / Edge / Brave / Opera:** [Chrome Web Store](https://chromewebstore.google.com/detail/tetrio-en-español/bgnmapfkbjocebaofkoidigmhgkgilgp)
+> - **Firefox:** [addons.mozilla.org](https://addons.mozilla.org/es-ES/firefox/addon/tetr-io-en-español/)
 
 ---
 
@@ -81,9 +72,6 @@ aplicar el parche.)*
 
 ## Preguntas frecuentes
 
-**¿Necesito instalar .NET / Node / algo?**
-No. El ejecutable lo trae todo dentro.
-
 **Actualicé TETR.IO y volvió al inglés.**
 Normal: la actualización reemplaza `app.asar`. Abre la app y pulsa «Aplicar» otra
 vez; detecta la versión nueva y refresca su copia de seguridad.
@@ -105,15 +93,11 @@ mismo (Administrador de tareas en Windows, Monitor de Actividad en macOS) y
 vuelve a intentarlo; también puede ser un antivirus bloqueando el archivo un
 instante — el asistente reintenta varios segundos antes de rendirse.
 
-**TETR.IO instalado como Flatpak / Snap / AppImage.**
-No se puede parchear una imagen de solo lectura. Habría que extraer `app.asar`,
-indicárselo con «Cambiar carpeta…» y volver a montarlo a mano.
-
 ---
 
 ## Aviso legal
 
-`Assets/translation.js` es trabajo de traducción propio; **no contiene código
-fuente de TETR.IO**. El `preload.js` original al que se añade permanece en la
-máquina de cada usuario y no se redistribuye aquí. TETR.IO es © osk. Si el
-titular de los derechos lo solicita, esto se retira.
+La traducción es trabajo propio; **no contiene código fuente de TETR.IO**. Los
+archivos originales del juego a los que se añade permanecen en la máquina de
+cada usuario y no se redistribuyen aquí. TETR.IO es © osk. Si el titular de
+los derechos lo solicita, esto se retira.

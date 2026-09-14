@@ -1,0 +1,33 @@
+name: Publicar extensión — Microsoft Edge Add-ons
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['ext-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  edge:
+    runs-on: ubuntu-latest
+    # El dispatch manual siempre corre; el trigger por tag respeta PUBLISH_EDGE
+    # (Settings -> Secrets and variables -> Actions -> Variables) por si esta
+    # tienda todavia no esta lista para publicar en automatico.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PUBLISH_EDGE != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Empaquetar (manifest.json + content.js + icons/)
+        run: |
+          cd browser-extension
+          zip -r ../extension-package.zip manifest.json content.js icons 2>/dev/null || \
+          zip -r ../extension-package.zip manifest.json content.js
+
+      - name: Publicar en Microsoft Edge Add-ons
+        env:
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_CLIENT_SECRET: ${{ secrets.EDGE_CLIENT_SECRET }}
+          EDGE_ACCESS_TOKEN_URL: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+        run: node browser-extension/publish-edge.mjs extension-package.zip

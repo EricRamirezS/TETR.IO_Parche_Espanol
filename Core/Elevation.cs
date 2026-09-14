@@ -8,10 +8,7 @@ public sealed record ElevationResult(bool Ok, string Message);
 /// <summary>Relanza este ejecutable con permisos elevados para hacer una acción concreta.</summary>
 public static class Elevation
 {
-    /// <summary>
-    /// Lanza <c>--worker --action &lt;apply|restore&gt; --asar &lt;ruta&gt;</c> con permisos de
-    /// administrador y espera a que termine. Devuelve el resultado que escribe el worker.
-    /// </summary>
+    /// <summary>Lanza <c>--worker --action &lt;apply|restore&gt; --asar &lt;ruta&gt;</c> elevado y devuelve el resultado que escribe el worker.</summary>
     public static async Task<ElevationResult> RunElevatedAsync(string action, string asarPath)
     {
         var exe = Environment.ProcessPath

@@ -49,9 +49,7 @@ function startTranslationObserver() {
 
         for (const mutation of mutations) {
 
-            // ==========================================
-            // ELEMENTOS NUEVOS
-            // ==========================================
+            // Elementos nuevos
             if (mutation.type === "childList") {
 
                 for (const node of mutation.addedNodes) {
@@ -66,19 +64,16 @@ function startTranslationObserver() {
                         continue;
                     }
 
-                    // El propio elemento
                     if (node.id && translations[node.id]) {
                         elementsToTranslate.add(node);
                     }
 
-                    // Elementos con ID dentro del nuevo contenido
                     node.querySelectorAll("[id]").forEach((element) => {
                         if (translations[element.id]) {
                             elementsToTranslate.add(element);
                         }
                     });
 
-                    // Contenedores dinámicos importantes
                     const dialogs = node.closest("#dialogs");
                     if (dialogs) {
                         elementsToTranslate.add(dialogs);
@@ -99,7 +94,6 @@ function startTranslationObserver() {
 
                 }
 
-                // El elemento donde se agregó contenido
                 const target = mutation.target;
 
                 if (
@@ -113,7 +107,6 @@ function startTranslationObserver() {
                         elementsToTranslate.add(target);
                     }
 
-                    // Buscar un contenedor registrado
                     let parent = target;
 
                     while (parent) {
@@ -150,9 +143,7 @@ function startTranslationObserver() {
                 }
             }
 
-            // ==========================================
-            // CAMBIO DE TEXTO
-            // ==========================================
+            // Cambio de texto
             if (mutation.type === "characterData") {
                 const shout = mutation.target.parentElement?.closest(".globalshouts .shout");
 
@@ -204,9 +195,7 @@ function startTranslationObserver() {
                 }
             }
 
-            // ==========================================
-            // CAMBIO DE ATRIBUTOS
-            // ==========================================
+            // Cambio de atributos
             if (mutation.type === "attributes") {
                 const target = mutation.target;
 
@@ -252,14 +241,7 @@ function startTranslationObserver() {
         attributeFilter: ["title"]
     });
 
-    // if (location.hostname === 'tetr.io') {
-    //     window.IPC.send('devtools');
-    // }
 }
-
-/* ======================================
-=============== INICIO ==================
-====================================== */
 
 startTranslationObserver();
 

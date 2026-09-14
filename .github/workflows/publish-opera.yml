@@ -1,0 +1,34 @@
+name: Publicar extensión — Opera Add-ons (manual)
+
+# Opera Add-ons no tiene una API publica para subir versiones (a diferencia de
+# Chrome/Edge/Firefox), asi que este workflow NO publica nada solo. Lo unico
+# que automatiza es armar el .zip mas reciente y dejarlo listo para descargar;
+# la subida en si se hace a mano en https://addons.opera.com/developer/.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  opera:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Empaquetar (manifest.json + content.js + icons/)
+        run: |
+          cd browser-extension
+          zip -r ../extension-package.zip manifest.json content.js icons 2>/dev/null || \
+          zip -r ../extension-package.zip manifest.json content.js
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opera-extension-package
+          path: extension-package.zip
+
+      - name: Siguiente paso (manual)
+        run: |
+          echo "::notice::Opera Add-ons no tiene API publica: no se puede publicar en automatico."
+          echo "::notice::Descarga el artefacto 'opera-extension-package' de esta ejecucion (arriba, en 'Summary') y subelo a mano en https://addons.opera.com/developer/"

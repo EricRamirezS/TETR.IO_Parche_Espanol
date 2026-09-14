@@ -5,8 +5,7 @@ namespace TetrioEsPatcher.Core;
 /// <summary>Detecta y cierra procesos de TETR.IO que puedan tener app.asar abierto.</summary>
 public static class TetrioProcess
 {
-    /// <summary>Procesos que parecen ser de TETR.IO (por nombre, o porque corren desde la
-    /// carpeta de instalación).</summary>
+    /// <summary>Procesos que parecen ser de TETR.IO, por nombre o por correr desde la carpeta de instalación.</summary>
     public static List<Process> FindRunning(string? installDir)
     {
         var self = Environment.ProcessId;

@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
-# Reconstruye Assets/translation.js a partir de las piezas en Assets/src/*.js.
-#
-# translation.js sigue siendo el ÚNICO archivo que consumen tanto el parche de
-# escritorio (EmbeddedResource en TetrioEsPatcher.csproj) como la extensión de
-# navegador (browser-extension/sync.sh lo copia tal cual a content.js). Este
-# script no cambia esos consumidores: solo genera ese mismo archivo a partir
-# de fuentes más manejables.
-#
-# Editar en Assets/src/, correr este script, y luego seguir el flujo de
-# siempre (browser-extension/sync.sh, build.sh, etc).
+# Reconstruye Assets/translation.js (único archivo que consumen el parche de escritorio y la extensión) a partir de Assets/src/*.js.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -39,12 +30,7 @@ for part in "${parts_before_images[@]}" "${parts_after_images[@]}"; do
     fi
 done
 
-# Convierte cada imagen en Assets/images/res/ (creadas por el proyecto, ver
-# images/README.md) a una entrada "ruta/relativa": "data:...;base64,...".
-# La clave es la ruta relativa a images/res/ SIN extension (a proposito: el
-# formato en el que guardamos el reemplazo -png, webp, lo que sea- no tiene
-# por que coincidir con el que pide tetrio.js bajo /res/; el MIME sí se toma
-# de la extension real del archivo).
+# Clave = ruta relativa a images/res/ SIN extension (a proposito: el formato del reemplazo no tiene por que coincidir con el que pide tetrio.js).
 images_block() {
     echo "const replacementImages = {"
 
@@ -103,10 +89,6 @@ trap 'rm -f "$assembled"' EXIT
     cat "${parts_after_images[@]}"
 } > "$assembled"
 
-# translation.js es el archivo que se distribuye (incrustado en el .exe y
-# copiado a la extension); minificarlo ahorra ~50% del PESO DEL CODIGO. Las
-# imagenes en base64 ya son la mayor parte del archivo y no se pueden
-# minificar mas, asi que el ahorro total suele ser pequeno en proporcion.
 if ! command -v npx >/dev/null 2>&1; then
     echo "Hace falta Node.js (para \"npx terser\") para generar translation.js minificado: https://nodejs.org" >&2
     exit 1

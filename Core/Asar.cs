@@ -7,13 +7,9 @@ using System.Text.Json.Nodes;
 namespace TetrioEsPatcher.Core;
 
 /// <summary>
-/// Lector / reescritor mínimo del formato ".asar" de Electron.
-///
-/// Formato:
-///   [Pickle tamaño: uint32(4) | uint32(largoCabecera)]        (8 bytes)
-///   [Pickle cabecera: uint32(payload) | uint32(largoJson) | json UTF-8 | padding a 4]
-///   [cuerpos de archivos concatenados, sin alineación entre ellos]
-/// Los "offset" del JSON son decimales (string) relativos al fin de la cabecera.
+/// Lector / reescritor mínimo del formato ".asar" de Electron:
+/// [Pickle tamaño: uint32(4)|uint32(largoCabecera)] (8B) + [Pickle cabecera: uint32(payload)|uint32(largoJson)|json UTF-8|padding a 4]
+/// + [cuerpos de archivos concatenados, sin alineación]. Los "offset" del JSON son decimales (string) relativos al fin de la cabecera.
 /// </summary>
 public static class Asar
 {
@@ -151,13 +147,7 @@ public static class Asar
 
     // -------------------------------------------------------------------- write
 
-    /// <summary>
-    /// Reescribe <paramref name="baseAsar"/> reemplazando el contenido de un único
-    /// archivo. Todo lo demás (orden, entradas "unpacked", integridad de los otros
-    /// archivos) se conserva exactamente. Escribe <paramref name="outAsar"/> y su
-    /// carpeta <c>.unpacked</c> (tomada de <paramref name="unpackedSourceDir"/>, o
-    /// de <c>baseAsar + ".unpacked"</c> si es null).
-    /// </summary>
+    /// <summary>Reescribe <paramref name="baseAsar"/> reemplazando el contenido de un único archivo; todo lo demás se conserva exactamente.</summary>
     public static void RewriteSingleFile(
         string baseAsar, string entryPath, byte[] newContent, string outAsar,
         string? unpackedSourceDir = null)

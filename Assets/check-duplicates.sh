@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
-# Detecta duplicados que JS acepta en silencio (la ultima declaracion gana,
-# sin ningun error ni warning) y que por eso son faciles de introducir sin
-# darse cuenta al copiar/pegar o mover codigo entre archivos:
-#
-#   - Dos entradas con la misma clave de nivel superior en el objeto
-#     `translations` de 05-translations.js (una tapa a la otra: la que queda
-#     "muerta" nunca se ejecuta).
-#   - Dos `function nombre(...)` con el mismo nombre en cualquier archivo de
-#     Assets/src/ (la segunda definicion reemplaza a la primera).
-#
-# Uso: ./check-duplicates.sh   (exit 0 si no hay problemas, 1 si encuentra algo)
+# Detecta claves/funciones duplicadas que JS acepta en silencio (gana la ultima, sin error ni warning).
 set -euo pipefail
 cd "$(dirname "$0")/src"
 

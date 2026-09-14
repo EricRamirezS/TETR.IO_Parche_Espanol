@@ -1,13 +1,4 @@
-# Reconstruye Assets/translation.js a partir de las piezas en Assets/src/*.js.
-#
-# translation.js sigue siendo el UNICO archivo que consumen tanto el parche de
-# escritorio (EmbeddedResource en TetrioEsPatcher.csproj) como la extension de
-# navegador (browser-extension/sync.ps1 lo copia tal cual a content.js). Este
-# script no cambia esos consumidores: solo genera ese mismo archivo a partir
-# de fuentes mas manejables.
-#
-# Editar en Assets/src/, correr este script, y luego seguir el flujo de
-# siempre (browser-extension/sync.ps1, build.ps1, etc).
+# Reconstruye Assets/translation.js (único archivo que consumen el parche de escritorio y la extensión) a partir de Assets/src/*.js.
 $ErrorActionPreference = "Stop"
 $originalLocation = Get-Location
 Set-Location $PSScriptRoot
@@ -41,12 +32,7 @@ foreach ($part in ($partsBeforeImages + $partsAfterImages)) {
     }
 }
 
-# Convierte cada imagen en Assets/images/res/ (creadas por el proyecto, ver
-# images/README.md) a una entrada "ruta/relativa": "data:...;base64,...".
-# La clave es la ruta relativa a images/res/ SIN extension (a proposito: el
-# formato en el que guardamos el reemplazo -png, webp, lo que sea- no tiene
-# por que coincidir con el que pide tetrio.js bajo /res/; el MIME sí se toma
-# de la extension real del archivo).
+# Clave = ruta relativa a images/res/ SIN extension (a proposito: el formato del reemplazo no tiene por que coincidir con el que pide tetrio.js).
 function Get-ImagesBlock {
     $mimeByExt = @{ ".png" = "image/png"; ".jpg" = "image/jpeg"; ".jpeg" = "image/jpeg"; ".webp" = "image/webp"; ".svg" = "image/svg+xml" }
     $entries = @()
@@ -76,8 +62,7 @@ function Get-ImagesBlock {
     return "const replacementImages = {`n$body};`n`n"
 }
 
-# translation.js se inyecta tal cual (ver .gitattributes: -text) -> se escribe
-# con LF y sin BOM, nunca con los saltos de linea/BOM por defecto de PowerShell.
+# Se inyecta tal cual (ver .gitattributes: -text): LF y sin BOM, no los de PowerShell por defecto.
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $content = ($partsBeforeImages | ForEach-Object { Get-Content -Raw -Path $_ }) -join ""
 $content += Get-ImagesBlock
@@ -88,10 +73,6 @@ $assembled = [System.IO.Path]::GetTempFileName()
 [System.IO.File]::WriteAllText($assembled, $content, $utf8NoBom)
 
 try {
-    # translation.js es el archivo que se distribuye (incrustado en el .exe y
-    # copiado a la extension); minificarlo ahorra ~50% del PESO DEL CODIGO. Las
-    # imagenes en base64 ya son la mayor parte del archivo y no se pueden
-    # minificar mas, asi que el ahorro total suele ser pequeno en proporcion.
     if (-not (Get-Command npx -ErrorAction SilentlyContinue)) {
         throw 'Hace falta Node.js (para "npx terser") para generar translation.js minificado: https://nodejs.org'
     }

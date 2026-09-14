@@ -2,21 +2,14 @@
 ==== PARCHE DE STRINGS EN tetrio.js =====
 ====================================== */
 
-// Textos de HUD como "GO!"/"CLUTCH" se dibujan con bitmap font, no hay DOM
-// que interceptar -> unica forma es reemplazar el string literal en el
-// propio tetrio.js antes de que se ejecute. Solo texto entre comillas,
-// nunca logica ni nombres de variables.
-//
-// tetrio.js se carga por fetch/XHR (bootstrap.js arma un Blob con la
-// respuesta), asi que se intercepta igual que las imagenes en
-// 00b-asset-interception.js.
+// Texto de HUD dibujado con bitmap font (sin DOM que interceptar): se reemplaza el string literal en tetrio.js antes de ejecutarlo.
+// tetrio.js se carga por fetch/XHR (bootstrap.js arma un Blob), igual que las imagenes en 00b-asset-interception.js.
 const APP_CODE_URL_SUFFIX = "/js/tetrio.js";
 
 const APP_CODE_STRING_REPLACEMENTS = [
     ['"GO!"', '"¡YA!"'],
 
-    // Cuenta regresiva de zenithex (Battle Royale "stride"): "ready" y
-    // "set" antes del "GO!" (ya traducido arriba, reusa el mismo string).
+    // Cuenta regresiva de zenithex: "ready"/"set" antes del "GO!" de arriba.
     ['"ready"', '"preparados"'],
     ['"set"', '"listos"'],
 
@@ -26,11 +19,7 @@ const APP_CODE_STRING_REPLACEMENTS = [
         "Ten cuidado al pegar cualquier cosa en la consola. Los atacantes podrian intentar robar tu informacion de inicio de sesion."
     ],
 
-    // Mensaje de #networkerror_fault_indicator: tetrio.js lo rellena por su
-    // cuenta 500ms-1000ms DESPUES de mostrar el modal de error de conexion
-    // (ver 05-translations.js). Traducirlo aqui, en el texto fuente, evita
-    // el parpadeo en ingles que se veia esperando a que el observer del DOM
-    // lo detectara y corrigiera despues de que ya estaba pintado en pantalla.
+    // Traducido en el fuente (no en 05-translations.js) para evitar el parpadeo en ingles: tetrio.js lo rellena async tras mostrar el modal.
     [
         "<br>this disconnect was detected to be caused by your network connection.",
         "<br>este corte se detecto como causado por tu conexion de red."
@@ -44,11 +33,7 @@ const APP_CODE_STRING_REPLACEMENTS = [
         "<br>si estas seguro de que este error no es de tu lado, por favor reportalo."
     ],
 
-    // Easter egg anti-devtools: un "debugger;" seguido de un comentario con
-    // arte ASCII que se ve al pausar en el depurador. El arte de las letras
-    // en bloque no se traduce (reharcerlo en español rompe el ancho fijo de
-    // la caja); solo las frases sueltas y el bloque de licencia, manteniendo
-    // el ancho de 98 caracteres de cada linea.
+    // Easter egg anti-devtools (arte ASCII al pausar en el depurador) ancho fijo de 98 columnas.
     ["Press F12 to close this screen.", "Presiona F12 para cerrar esta pantalla."],
     [
         " ▄                IF SOMEONE TOLD YOU TO OPEN THIS PANEL, YOU ARE BEING SCAMMED!                 ▄",
@@ -71,15 +56,13 @@ const APP_CODE_STRING_REPLACEMENTS = [
         "█▀                    █████▄▄█████    esta prohibido!         █████▄▄█████                      █▀"
     ],
 
-    // cleartypes (rachas de "clutch"). TRIPLE y PENTA+ se escriben igual en
-    // español ("KAGARIS" es una broma interna del juego) -> sin traducir.
+    // TRIPLE y PENTA+ ("KAGARIS") se escriben igual en español, sin traducir.
     ['"VOID"', '"VACIO"'],
     ['"SINGLE"', '"SIMPLE"'],
     ['"DOUBLE"', '"DOBLE"'],
     ['"QUAD"', '"CUADRUPLE"'],
 
-    // Sin comillas: "CLUTCH" aparece solo, combinado ("PENTA CLUTCH") o con
-    // contador de racha ("CLUTCH \fc3X5").
+    // Sin comillas: aparece solo, combinado o con contador de racha.
     ['CLUTCH', 'SALVADA'],
 
     // Pisos de la Torre Zenith + la etiqueta "FLOOR".
@@ -95,43 +78,29 @@ const APP_CODE_STRING_REPLACEMENTS = [
     ['"CORRUPTION"', '"CORRUPCION"'],
     ['"PLATFORM OF THE GODS"', '"PLATAFORMA DE LOS DIOSES"'],
 
-    // Strings.extra (mismo sistema de bitmap font). "\n" es literal (2 bytes
-    // del bitmap font), por eso "\\n" en este codigo. btb/btb_short
-    // ("back-to-back") se dejan sin traducir: es jerga de Tetris reconocida
-    // igual en español.
+    // "\n" es literal del bitmap font (2 bytes), por eso "\\n" aqui. btb/btb_short se dejan sin traducir: jerga de Tetris igual en español.
     ["ALL\\nCLEAR", "DESPEJE\\nPERFECTO"],
     ["COLOR\\nCLEAR", "DESPEJE\\nDE COLOR"],
     ["LEVEL\\nCOMPLETE", "NIVEL\\nCOMPLETO"],
 
-    // Strings.zenithModsShort: solo se usa para el texto de compartir en
-    // X/Twitter, nunca llega al DOM -> no hay forma de traducirlo por
-    // diccionario (ver ZENITH_MOD_TITLES en 08-dom-helpers.js para el
-    // nombre completo, que si es DOM). Codigos de 2 letras, demasiado
-    // cortos para reemplazar sueltos -> se reemplaza el objeto completo.
+    // Solo para el texto de compartir en X/Twitter (nunca llega al DOM); codigos de 2 letras, se reemplaza el objeto completo (ver ZENITH_MOD_TITLES en 08-dom-helpers.js para el nombre largo, que si es DOM).
     [
         'zenithModsShort:{invisible:"IN",messy:"MS",volatile:"VL",nohold:"NH",doublehole:"DH",allspin:"AS",gravity:"GV",expert:"EX",duo:"2P",snowman:"SNOWBALL",snowman_reversed:"SNOWBALL-R",invisible_reversed:"IN-R",messy_reversed:"MS-R",volatile_reversed:"VL-R",nohold_reversed:"NH-R",doublehole_reversed:"DH-R",allspin_reversed:"AS-R",gravity_reversed:"GV-R",expert_reversed:"EX-R",duo_reversed:"2P-R"}',
         'zenithModsShort:{invisible:"IN",messy:"BD",volatile:"BV",nohold:"SR",doublehole:"DA",allspin:"TS",gravity:"GR",expert:"EX",duo:"2P",snowman:"NIEVE",snowman_reversed:"NIEVE-R",invisible_reversed:"IN-R",messy_reversed:"BD-R",volatile_reversed:"BV-R",nohold_reversed:"SR-R",doublehole_reversed:"DA-R",allspin_reversed:"TS-R",gravity_reversed:"GR-R",expert_reversed:"EX-R",duo_reversed:"2P-R"}'
     ],
 
-    // O.DisplayCounters: etiqueta corta que se dibuja junto al valor de los
-    // contadores de la esquina del tablero (canvas). Distinto del dict de
-    // list_request_scroller (el MENU donde se elige que contador mostrar,
-    // ese si es DOM). Valores muy cortos/comunes -> se reemplaza el objeto
-    // completo en vez de cada uno suelto.
+    // Etiquetas de los contadores del tablero (canvas), distinto del dict de list_request_scroller (el MENU, que si es DOM); valores muy cortos/comunes, se reemplaza el objeto completo.
     [
         'static DisplayCounters={timer:"time",stopwatch:"time",level:"level",lines:"lines",allclears:"all clears",hold:"hold",pieces:"pieces",pieces_duo:"pieces",finesse_l:"finesse",finesse:"finesse",keys:"inputs",score:"score",spp:"score",garbage:"garbage",attack:"attack",attack_duo:"attack",vs:"VS score",kills:"KO\'s",kills_duo:"KO\'s",placement:"placement"}',
         'static DisplayCounters={timer:"tiempo",stopwatch:"tiempo",level:"nivel",lines:"lineas",allclears:"despejes perfectos",hold:"reserva",pieces:"piezas",pieces_duo:"piezas",finesse_l:"precision",finesse:"precision",keys:"entradas",score:"puntuacion",spp:"puntuacion",garbage:"basura",attack:"ataque",attack_duo:"ataque",vs:"puntuacion VS",kills:"eliminados",kills_duo:"eliminados",placement:"posicion"}'
     ],
 
-    // Aviso "X PLAYERS LEFT" en Battle Royale (100/30/10). Las 3 llamadas
-    // comparten el mismo sufijo -> una sola entrada para las 3.
+    // Las 3 llamadas de "X PLAYERS LEFT" (100/30/10) comparten sufijo.
     ["\\fc3PLAYERS LEFT", "\\fc3JUGADORES RESTANTES"],
     ["\\fc3PLAYING NOW", "\\fc3JUGANDO AHORA"],
 
-    // zenithRevivePrompts: los 79 desafios de "revivir" en Duo.
-    // patchAppCodeSource() ordena todo el arreglo de mas largo a mas corto
-    // porque algunas frases cortas son prefijo de otras mas largas
-    // (p.ej. "Clear a Quad" vs "Clear a Quad in the\nupper...").
+    // Los 79 desafios de "revivir" en Duo
+    // + (frases cortas son prefijo de otras mas largas).
     ["Perform a 3-Combo", "Realiza un Combo de 3"],
     ["Clear 2 Doubles", "Despeja 2 Dobles"],
     ["Clear a Quad", "Despeja un Cuadruple"],
@@ -212,9 +181,7 @@ const APP_CODE_STRING_REPLACEMENTS = [
     ["Clear 4 Spins\\nin one Combo", "Despeja 4 Spins\\nen un Combo"],
     ["Clear a T-Spin Double/Triple\\ncentered in column 1 or 10", "Despeja un T-Spin Doble/Triple\\ncentrado en la columna 1 o 10"],
 
-    // Anuncios narrativos "waterfall" de fatiga en Zenith. HTML embebido en
-    // cada string, se traduce el texto y se deja el marcado igual.
-    // "%p1"/"%p2" son placeholders de nombres de jugador en Duo, sin traducir.
+    // HTML embebido en cada string: se traduce el texto, el marcado queda igual. %p1/%p2 son placeholders de nombre de jugador, sin traducir.
     ['FATIGUE SETS IN…<br><span style="font-size: 0.8em;">+2 PERMANENT LINES</span>', 'LA FATIGA SE HACE PRESENTE…<br><span style="font-size: 0.8em;">+2 LINEAS PERMANENTES</span>'],
     ['YOUR BODY GROWS WEAK…<br><span style="font-size: 0.8em;">receive 25% more garbage</span>', 'TU CUERPO SE DEBILITA…<br><span style="font-size: 0.8em;">recibe 25% mas basura</span>'],
     ['ALL SENSES BLUR TOGETHER…<br><span style="font-size: 0.8em;">+3 PERMANENT LINES</span>', 'TODOS TUS SENTIDOS SE NUBLAN…<br><span style="font-size: 0.8em;">+3 LINEAS PERMANENTES</span>'],

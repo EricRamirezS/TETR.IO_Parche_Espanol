@@ -3,11 +3,12 @@
 Cambios notables de este proyecto, en español. Formato inspirado en
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
-Cada versión publicada (tag `vX.Y.Z`) tiene su propia sección `## [X.Y.Z] - AAAA-MM-DD`
-más abajo. El workflow de **Release** extrae automáticamente la sección que
-coincide con el tag que se está publicando y la usa como cuerpo de las notas
-de lanzamiento en GitHub — por eso el encabezado de cada versión debe escribirse
-exactamente como `## [X.Y.Z] - AAAA-MM-DD` (sin texto extra en esa misma línea).
+Mientras se trabaja, los cambios se anotan bajo **`## [Sin publicar]`**. Al
+publicar un tag `vX.Y.Z`, el workflow de **Release** archiva esa sección solo
+— la renombra a `## [X.Y.Z] - AAAA-MM-DD`, la usa como cuerpo de las notas de
+lanzamiento en GitHub, deja una `[Sin publicar]` vacía lista para lo
+siguiente, y publica ese cambio de vuelta en `main`. No hace falta editar
+este archivo a mano antes de taguear.
 
 ## [Sin publicar]
 
@@ -26,8 +27,16 @@ exactamente como `## [X.Y.Z] - AAAA-MM-DD` (sin texto extra en esa misma línea)
 - Soporte de imágenes de reemplazo en formato **WebP** (además de PNG/JPG/SVG),
   con clave independiente de la extensión del archivo — reduce
   significativamente el peso de `translation.js`.
+- La extensión de navegador ya tiene icono propio (`icons/icon{16,32,48,128}.png`)
+  y está publicada públicamente en la Chrome Web Store y en
+  addons.mozilla.org (Firefox, canal *listed*).
 
 ### Corregido
+- `Assets/build-translation.ps1` dejaba el directorio de trabajo de
+  PowerShell en `Assets/` si algo fallaba a mitad de script, rompiendo las
+  rutas relativas del script que lo llamaba (`sync.ps1`). Se corrigió ahí y
+  en el resto de scripts `.ps1` del repo con el mismo patrón (restaurar la
+  ubicación original dentro de un `try`/`finally`).
 - Varios bugs de traducción "silenciosa" que dejaban texto en inglés sin que
   se notara a simple vista: expresiones regulares con espacios de más,
   handlers que sobrescribían contenido ya traducido por el propio juego
@@ -39,11 +48,9 @@ exactamente como `## [X.Y.Z] - AAAA-MM-DD` (sin texto extra en esa misma línea)
   definición, dejando la primera sin efecto.
 
 <!--
-  Al publicar una versión, mueve lo de "Sin publicar" a una seccion nueva
-  con este formato exacto (el workflow de Release busca este encabezado
-  literal para extraer las notas del tag correspondiente):
-
-  ## [X.Y.Z] - AAAA-MM-DD
+  No hace falta tocar nada aqui al publicar: el workflow de Release archiva
+  "[Sin publicar]" solo (ver .github/workflows/release.yml). Durante el
+  desarrollo, agrega entradas bajo "## [Sin publicar]" con este formato:
 
   ### Añadido
   - ...

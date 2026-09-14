@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Publica un paquete en Microsoft Edge Add-ons usando la API v1.1
 // (https://learn.microsoft.com/microsoft-edge/extensions-chromium/publish/api/using-addons-api).
-// No hay un CLI oficial de Microsoft para esto, así que son llamadas REST directas.
 //
 // Variables de entorno requeridas:
 //   EDGE_PRODUCT_ID        (de la URL del panel del producto en Partner Center)
@@ -30,9 +29,7 @@ for (const [k, v] of Object.entries({ EDGE_CLIENT_ID, EDGE_CLIENT_SECRET, EDGE_A
 const API = 'https://api.addons.microsoftedge.microsoft.com';
 
 async function getToken() {
-  // La API v1.1 usa OAuth2 client-credentials con "scope". Si tu registro de
-  // Partner Center es más antiguo y esto falla con invalid_scope, cambia
-  // "scope" por "resource" (ver README de esta carpeta).
+  // Si falla con invalid_scope (registro antiguo de Partner Center), cambia "scope" por "resource" (ver README).
   const body = new URLSearchParams({
     client_id: EDGE_CLIENT_ID,
     client_secret: EDGE_CLIENT_SECRET,

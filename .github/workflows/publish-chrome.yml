@@ -1,0 +1,35 @@
+name: Publicar extensión — Chrome Web Store
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['ext-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  chrome:
+    runs-on: ubuntu-latest
+    # El dispatch manual siempre corre; el trigger por tag respeta PUBLISH_CHROME
+    # (Settings -> Secrets and variables -> Actions -> Variables) por si esta
+    # tienda todavia no esta lista para publicar en automatico.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PUBLISH_CHROME != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Empaquetar (manifest.json + content.js + icons/)
+        run: |
+          cd browser-extension
+          zip -r ../extension-package.zip manifest.json content.js icons 2>/dev/null || \
+          zip -r ../extension-package.zip manifest.json content.js
+
+      - name: Subir y publicar en Chrome Web Store
+        env:
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli upload --source extension-package.zip
+          npx --yes chrome-webstore-upload-cli publish

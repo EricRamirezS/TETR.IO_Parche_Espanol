@@ -1,18 +1,25 @@
+# .NET
 bin/
 obj/
 dist/
+TestResults/
 *.user
-.vs/
-.idea/
-.DS_Store
 
-# Node (proyecto anterior en legacy/)
-legacy/node_modules/
-legacy/dist/
-legacy/src/payload.generated.js
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# SO
+.DS_Store
+Thumbs.db
+desktop.ini
 
 home.html
 tetrio.js
 TETRIO2.JS
 preload.stock.js
 preload.js
+
+/*.zip
+/*.rar
