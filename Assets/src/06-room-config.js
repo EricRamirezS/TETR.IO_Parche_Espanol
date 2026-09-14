@@ -78,7 +78,7 @@ function custom_game(e) {
         "seed": "semilla",
         "can_retry": "permitir reintentar",
         "stock": "vidas",
-        "clutch": "activar clutch clears",
+        "clutch": "activar salvadas",
         "nolockout": "desactivar lockout",
         "boardwidth": "ancho del tablero",
         "boardheight": "alto del tablero",
@@ -95,10 +95,10 @@ function custom_game(e) {
         "kickset": "tabla de kicks",
         "allow_harddrop": "usar descenso instantaneo",
         "display_next": "usar cola NEXT",
-        "display_hold": "usar cola HOLD",
+        "display_hold": "usar cola de RESERVA",
         "nextcount": "piezas siguientes",
         "infinite_movement": "movimiento infinito",
-        "infinite_hold": "HOLD infinito",
+        "infinite_hold": "RESERVA infinita",
         "display_shadow": "mostrar pieza fantasma",
         "are": "ARE",
         "lineclear_are": "ARE al limpiar linea",
@@ -141,10 +141,10 @@ function custom_game(e) {
         "kickset": "Tipo de kicks que pueden realizar las piezas.",
         "allow_harddrop": "Indica si se permite utilizar el boton de descenso instantaneo.",
         "display_next": "Indica si se muestra la cola NEXT.",
-        "display_hold": "Indica si se utiliza la cola HOLD.",
+        "display_hold": "Indica si se utiliza la cola de RESERVA.",
         "nextcount": "Cantidad de piezas mostradas en la cola NEXT, si esta activada.",
         "infinite_movement": "Indica si la pieza nunca se bloquea mientras sigas moviendola.",
-        "infinite_hold": "Si esta activado, HOLD no se desactiva despues de utilizarlo.",
+        "infinite_hold": "Si esta activado, la RESERVA no se desactiva despues de utilizarla.",
         "display_shadow": "Indica si se muestra la pieza fantasma.",
         "are": "Cantidad de frames entre colocar una pieza y generar la siguiente.",
         "lineclear_are": "Cantidad de frames entre colocar una pieza y generar la siguiente si se limpio una linea.",
@@ -341,7 +341,7 @@ function custom_meta(e) {
         "level,NIVEL,mostrar el nivel actual en este espacio;" +
         "pieces,PIEZAS,mostrar la cantidad de piezas colocadas y la velocidad en este espacio;" +
         "keys,ENTRADAS,mostrar la cantidad de pulsaciones de botones en este espacio;" +
-        "hold,HOLD,mostrar la cantidad de piezas en HOLD en este espacio;" +
+        "hold,RESERVA,mostrar la cantidad de piezas en RESERVA en este espacio;" +
         "allclears,ALL CLEARS,mostrar la cantidad de ALL CLEARS en este espacio;" +
         "garbage,BASURA LIMPIADA,mostrar la cantidad de lineas de basura limpiadas en este espacio";
 
@@ -424,7 +424,7 @@ function slot_blitz_counter(e, position, side) {
         "keys,ENTRADAS,mostrar la cantidad de pulsaciones de botones en este espacio;" +
         "finesse,PRECISION,mostrar tu precision en este espacio;" +
         "finesse_l,PRECISION (MAS PEQUENO),mostrar tu precision en este espacio (para usar en el lado izquierdo);" +
-        "hold,HOLD,mostrar la cantidad de piezas en HOLD en este espacio;" +
+        "hold,RESERVA,mostrar la cantidad de piezas en RESERVA en este espacio;" +
         "allclears,ALL CLEARS,mostrar la cantidad de ALL CLEARS en este espacio"
     );
 }
@@ -441,7 +441,7 @@ function slot_40l_counter(e, position, side) {
         "keys,ENTRADAS,mostrar la cantidad de pulsaciones de botones en este espacio;" +
         "finesse,PRECISION,mostrar tu precision en este espacio;" +
         "finesse_l,PRECISION (MAS PEQUENO),mostrar tu precision en este espacio (para usar en el lado izquierdo);" +
-        "hold,HOLD,mostrar la cantidad de piezas en HOLD en este espacio;" +
+        "hold,RESERVA,mostrar la cantidad de piezas en RESERVA en este espacio;" +
         "allclears,ALL CLEARS,mostrar la cantidad de ALL CLEARS en este espacio"
     );
 }
@@ -472,7 +472,7 @@ function room_welcome(e) {
         "rotar en sentido antihorario",
         "rotar en sentido horario",
         "rotar 180",
-        "intercambiar pieza en HOLD"
+        "intercambiar pieza en RESERVA"
     ];
 
     rows.forEach((row, i) => {
@@ -610,10 +610,10 @@ function room_game(e) {
         "bombs-style garbage": "basura estilo bombas",
         "use hard drop": "usar descenso instantaneo",
         "use NEXT queue": "usar cola NEXT",
-        "use HOLD queue": "usar cola HOLD",
+        "use HOLD queue": "usar cola de RESERVA",
         "next pieces": "piezas siguientes",
         "infinite movement": "movimiento infinito",
-        "infinite HOLD": "HOLD infinito",
+        "infinite HOLD": "RESERVA infinita",
         "show shadow piece": "mostrar pieza fantasma",
         "ARE": "ARE",
         "line clear ARE": "ARE al limpiar linea",
@@ -655,7 +655,7 @@ function room_game(e) {
         "enable all clears": "activar all clears",
         "all clear garbage": "basura de all clear",
         "all clear back-to-back": "back-to-back de all clear",
-        "enable clutch clears": "activar clutch clears",
+        "enable clutch clears": "activar salvadas",
         "garbage passthrough": "paso de basura",
         "rounding mode": "modo de redondeo"
     };
@@ -694,7 +694,7 @@ function room_game(e) {
             "Indica si se muestra la cola NEXT.",
 
         "Whether to use the HOLD queue.":
-            "Indica si se usa la cola HOLD.",
+            "Indica si se usa la cola de RESERVA.",
 
         "Amount of pieces shown in the NEXT queue, if said queue is enabled.":
             "Cantidad de piezas mostradas en la cola NEXT, si esta habilitada.",
@@ -703,7 +703,7 @@ function room_game(e) {
             "Indica si nunca se bloquea la pieza mientras sigas moviendola.",
 
         "If enabled, do not disable HOLD after using it.":
-            "Si esta activado, no desactiva HOLD despues de usarlo.",
+            "Si esta activado, no desactiva RESERVA despues de usarla.",
 
         "Whether to show the shadow piece.":
             "Indica si se muestra la pieza fantasma.",

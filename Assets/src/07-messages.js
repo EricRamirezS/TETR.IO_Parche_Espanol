@@ -29,7 +29,7 @@ function sys_guide(e) {
         "rotar en sentido antihorario",
         "rotar en sentido horario",
         "rotar 180",
-        "intercambiar pieza en HOLD"
+        "intercambiar pieza en RESERVA"
     ];
 
     rows.forEach((row, i) => {

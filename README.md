@@ -154,11 +154,19 @@ Por debajo es `dotnet publish -c Release -r <rid> --self-contained -p:PublishSin
 
 1. Actualiza `Assets/translation.js` y/o el código.
 2. Sube `<Version>` en `TetrioEsPatcher.csproj`.
-3. `git tag vX.Y.Z && git push --follow-tags`.
+3. En [`CHANGELOG.md`](CHANGELOG.md), mueve lo de **`[Sin publicar]`** a una
+   sección nueva `## [X.Y.Z] - AAAA-MM-DD` (mismo número que el paso 2). El
+   workflow busca ese encabezado exacto para armar las notas de lanzamiento;
+   si no lo encuentra, publica igual pero sin registro de cambios (avisa con
+   un `::warning::` en el log de Actions).
+4. `git tag vX.Y.Z && git push --follow-tags`.
 
 El workflow **Release** compila los 5 binarios (`win-x64`, `osx-x64/arm64`,
-`linux-x64/arm64`), envuelve el de macOS en un `.app` y publica todo en una
-*GitHub Release* con `SHA256SUMS.txt`.
+`linux-x64/arm64`), envuelve el de macOS en un `.app`, y publica todo en una
+*GitHub Release* con `SHA256SUMS.txt`. Las notas de lanzamiento se arman en
+español a partir de [`.github/release_notes_template.md`](.github/release_notes_template.md)
+(descarga, avisos, instalación, deshacer) más la sección del `CHANGELOG.md`
+que corresponda al tag.
 
 ### Cómo funciona el parche
 

@@ -17,6 +17,7 @@ if ($LASTEXITCODE -ne 0) { throw "check-duplicates.ps1 encontro duplicados; revi
 $partsBeforeImages = @(
     "src/00-header.js",
     "src/00b-asset-interception.js",
+    "src/00c-appcode-string-patch.js",
     "src/01-data-countries.js",
     "src/02-data-achievements.js",
     "src/03-data-badges.js",
@@ -38,12 +39,15 @@ foreach ($part in ($partsBeforeImages + $partsAfterImages)) {
 }
 
 # Convierte cada imagen en Assets/images/res/ (creadas por el proyecto, ver
-# images/README.md) a una entrada "ruta/relativa.png": "data:...;base64,...".
-# La clave es la ruta relativa a images/res/, igual que la sirve TETR.IO bajo
-# /res/ (necesario porque /res/ repite nombres de archivo en carpetas distintas).
+# images/README.md) a una entrada "ruta/relativa": "data:...;base64,...".
+# La clave es la ruta relativa a images/res/ SIN extension (a proposito: el
+# formato en el que guardamos el reemplazo -png, webp, lo que sea- no tiene
+# por que coincidir con el que pide tetrio.js bajo /res/; el MIME sí se toma
+# de la extension real del archivo).
 function Get-ImagesBlock {
-    $mimeByExt = @{ ".png" = "image/png"; ".jpg" = "image/jpeg"; ".jpeg" = "image/jpeg"; ".svg" = "image/svg+xml" }
+    $mimeByExt = @{ ".png" = "image/png"; ".jpg" = "image/jpeg"; ".jpeg" = "image/jpeg"; ".webp" = "image/webp"; ".svg" = "image/svg+xml" }
     $entries = @()
+    $seenKeys = @{}
 
     if (Test-Path "images/res") {
         $imagesRoot = (Resolve-Path "images/res").Path
@@ -52,7 +56,14 @@ function Get-ImagesBlock {
             Sort-Object FullName
         foreach ($f in $files) {
             $mime = $mimeByExt[$f.Extension.ToLower()]
-            $rel = $f.FullName.Substring($imagesRoot.Length + 1) -replace "\\", "/"
+            $relFull = $f.FullName.Substring($imagesRoot.Length + 1) -replace "\\", "/"
+            $rel = $relFull.Substring(0, $relFull.Length - $f.Extension.Length)
+
+            if ($seenKeys.ContainsKey($rel)) {
+                throw "Dos imagenes distintas apuntan a la misma clave `"$rel`": $($seenKeys[$rel]) y $relFull"
+            }
+            $seenKeys[$rel] = $relFull
+
             $b64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($f.FullName))
             $entries += "    `"$rel`": `"data:$mime;base64,$b64`""
         }

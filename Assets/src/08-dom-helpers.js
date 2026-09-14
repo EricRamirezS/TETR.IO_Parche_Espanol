@@ -13,11 +13,182 @@ function text(e, t) {
     e.innerHTML = t;
 }
 
-// Idiom repetido ~28 veces en 05-translations.js: buscar el texto actual en un
-// diccionario y reemplazarlo si hay traduccion. `dict` nunca se llama
-// "translations" aqui para no sombrear la constante global del mismo nombre.
-// Devuelve true si tradujo algo, por si el llamador necesita encadenar un
-// "si no, prueba otra cosa" (ver footer_text).
+// La tecla "Meta" es la de Windows en Windows/Linux, pero es CMD (⌘) en Mac
+// -> se detecta la plataforma para no mostrar "WINDOWS" en un Mac.
+const IS_MAC_PLATFORM = /Mac/.test(navigator.platform || "");
+
+// Motivos de cierre del websocket ("ribbon", nombre interno de TETR.IO para
+// su conexion) que aparecen como "REASON: X" en el modal de error de
+// conexion. Vienen de it._CLOSE_CODES en tetrio.js + "ping timeout"/
+// "failed to connect". Un motivo que no esta en este diccionario (texto
+// libre del servidor) se deja tal cual.
+const CONNECTION_CLOSE_REASONS = {
+    "ribbon closed normally": "conexion cerrada normalmente",
+    "client closed ribbon": "el cliente cerro la conexion",
+    "protocol error": "error de protocolo",
+    "protocol violation": "violacion de protocolo",
+    "no error provided": "no se proporciono un error",
+    "ribbon lost": "conexion perdida",
+    "payload data corrupted": "datos corruptos",
+    "too much data": "demasiados datos",
+    "negotiation error": "error de negociacion",
+    "server error": "error del servidor",
+    "server restarting": "el servidor se esta reiniciando",
+    "temporary error": "error temporal",
+    "bad gateway": "error de gateway",
+    "TLS error": "error de TLS",
+    "ping timeout": "tiempo de espera agotado",
+    "failed to connect": "no se pudo conectar"
+};
+
+// Nombre de tecla mostrado en la tabla de controles personalizados: viene
+// directo del KeyboardEvent.code del navegador, en mayusculas (ARROWLEFT,
+// SHIFTLEFT, KEYZ, DIGIT1...). Cualquier tecla del teclado es valida, asi
+// que el diccionario cubre todo el layout estandar (no solo las teclas que
+// usa la configuracion por defecto).
+const KEYBOARD_CODE_NAMES = {
+    "SPACE": "ESPACIO",
+    "TAB": "TABULADOR",
+    "ENTER": "INTRO",
+    "NUMPADENTER": "INTRO NUMPAD",
+    "BACKSPACE": "RETROCESO",
+    "ESCAPE": "ESCAPE",
+    "CAPSLOCK": "BLOQ MAYUS",
+    "DELETE": "SUPR",
+    "INSERT": "INSERTAR",
+    "HOME": "INICIO",
+    "END": "FIN",
+    "PAGEUP": "RE PAG",
+    "PAGEDOWN": "AV PAG",
+    "PRINTSCREEN": "IMPR PANT",
+    "SCROLLLOCK": "BLOQ DESPL",
+    "PAUSE": "PAUSA",
+    "CONTEXTMENU": "MENU CONTEXTUAL",
+    "NUMLOCK": "BLOQ NUM",
+
+    "ARROWLEFT": "IZQUIERDA",
+    "ARROWRIGHT": "DERECHA",
+    "ARROWUP": "ARRIBA",
+    "ARROWDOWN": "ABAJO",
+
+    "SHIFTLEFT": "MAYUS IZQUIERDA",
+    "SHIFTRIGHT": "MAYUS DERECHA",
+    "CONTROLLEFT": "CTRL IZQUIERDO",
+    "CONTROLRIGHT": "CTRL DERECHO",
+    "ALTLEFT": "ALT IZQUIERDO",
+    "ALTRIGHT": "ALT DERECHO",
+    "METALEFT": IS_MAC_PLATFORM ? "COMANDO IZQUIERDA" : "WINDOWS IZQUIERDA",
+    "METARIGHT": IS_MAC_PLATFORM ? "COMANDO DERECHA" : "WINDOWS DERECHA",
+
+    "BACKQUOTE": "ACENTO GRAVE",
+    "MINUS": "GUION",
+    "EQUAL": "IGUAL",
+    "BRACKETLEFT": "CORCHETE IZQUIERDO",
+    "BRACKETRIGHT": "CORCHETE DERECHO",
+    "BACKSLASH": "BARRA INVERTIDA",
+    "SEMICOLON": "PUNTO Y COMA",
+    "QUOTE": "COMILLA",
+    "COMMA": "COMA",
+    "PERIOD": "PUNTO",
+    "SLASH": "BARRA",
+    "INTLBACKSLASH": "MENOR QUE",
+
+    "NUMPADADD": "SUMAR",
+    "NUMPADSUBTRACT": "RESTAR",
+    "NUMPADMULTIPLY": "MULTIPLICAR",
+    "NUMPADDIVIDE": "DIVIDIR",
+    "NUMPADDECIMAL": "DECIMAL",
+    "NUMPADEQUAL": "IGUAL NUMPAD",
+    "NUMPADCOMMA": "COMA NUMPAD",
+
+    "AUDIOVOLUMEUP": "SUBIR VOLUMEN",
+    "AUDIOVOLUMEDOWN": "BAJAR VOLUMEN",
+    "AUDIOVOLUMEMUTE": "SILENCIAR",
+    "MEDIAPLAYPAUSE": "REPRODUCIR/PAUSA",
+    "MEDIASTOP": "DETENER",
+    "MEDIATRACKNEXT": "SIGUIENTE PISTA",
+    "MEDIATRACKPREVIOUS": "PISTA ANTERIOR"
+};
+
+function normalizeKeybindName(value) {
+    if (value === "[NOT SET]") return "[SIN DEFINIR]";
+    if (KEYBOARD_CODE_NAMES[value]) return KEYBOARD_CODE_NAMES[value];
+    if (/^KEY[A-Z]$/.test(value)) return value.slice(3);
+    if (/^DIGIT[0-9]$/.test(value)) return value.slice(5);
+    return value;
+}
+
+// Las tablas de referencia (controls_keybinds_list_guideline/_wasd) ya
+// traen las teclas en el formato corto de home.html ("LEFT, NUMPAD4",
+// "UP (or W)..."), no en el formato KeyboardEvent.code de la tabla
+// personalizada -> palabra por palabra en vez de normalizeKeybindName.
+// CTRL, ESCAPE, NUMPAD y las letras/digitos sueltos se dejan igual.
+const KEYBIND_REFERENCE_WORDS = {
+    "LEFT": "IZQUIERDA",
+    "RIGHT": "DERECHA",
+    "UP": "ARRIBA",
+    "DOWN": "ABAJO",
+    "SPACE": "ESPACIO",
+    "SHIFT": "MAYUS",
+    "ENTER": "INTRO",
+    "BACKSPACE": "RETROCESO",
+    "TAB": "TABULADOR",
+    "or": "o"
+};
+
+function translateKeybindReference(value) {
+    return Object.entries(KEYBIND_REFERENCE_WORDS).reduce(
+        (text, [en, es]) => text.replace(new RegExp(`\\b${en}\\b`, "g"), es),
+        value
+    );
+}
+
+// El timer de tetra_zenithtimer/zenith_zenithtimer/zenithresults_zenithtimer
+// tiene dos plantillas segun tetrio.js: "CYCLED <b>X</b> AGO" (paso) o
+// "CYCLES IN <b>X</b>" (futuro) -> antes se forzaba siempre el texto de
+// "futuro" y quedaba un " AGO" suelto sin traducir cuando era "pasado".
+// Se distinguen por si hay texto con "AGO" despues del <b>.
+function translateZenithTimer(timer, futureText, pastText) {
+    if (!timer) return;
+
+    const bold = timer.querySelector("b");
+    if (!bold) return;
+
+    const afterBold = bold.nextSibling;
+    const isPast = afterBold && afterBold.nodeType === Node.TEXT_NODE && afterBold.textContent.includes("AGO");
+
+    const prefixNode = timer.firstChild;
+    if (prefixNode && prefixNode.nodeType === Node.TEXT_NODE) {
+        const newPrefix = isPast ? pastText : futureText;
+        if (prefixNode.textContent !== newPrefix) {
+            prefixNode.textContent = newPrefix;
+        }
+    }
+
+    if (isPast) {
+        const newSuffix = afterBold.textContent.replace(/\s*AGO\s*/, "");
+        if (newSuffix !== afterBold.textContent) {
+            afterBold.textContent = newSuffix;
+        }
+    }
+
+    const value = bold.textContent;
+    const translated = value
+        .replace(/\bYEARS\b/, "ANOS")
+        .replace(/\bMONTHS\b/, "MESES")
+        .replace(/\bWEEKS\b/, "SEMANAS")
+        .replace(/\bDAYS\b/, "DIAS")
+        .replace(/\bHOURS\b/, "HORAS")
+        .replace(/\bMINUTES\b/, "MINUTOS")
+        .replace(/\bSECONDS\b/, "SEGUNDOS");
+
+    if (translated !== value) {
+        bold.textContent = translated;
+    }
+}
+
+// Busca el texto actual en un diccionario y lo reemplaza si hay traduccion.
+// Devuelve true si tradujo algo (para encadenar "si no, prueba otra cosa").
 function translateByDict(e, dict) {
     const value = e.textContent.trim();
     const translated = dict[value];
@@ -30,8 +201,7 @@ function translateByDict(e, dict) {
     return false;
 }
 
-// Igual que translateByDict, pero mirando un atributo (normalmente "title")
-// en vez del texto visible.
+// Igual que translateByDict, pero sobre un atributo (normalmente "title").
 function translateAttrByDict(e, attrName, dict) {
     const value = e.getAttribute(attrName);
     const translated = dict[value];
@@ -44,8 +214,8 @@ function translateAttrByDict(e, attrName, dict) {
     return false;
 }
 
-// Para los sitios que solo necesitan sustituir un termino dentro de un texto
-// mas largo (en vez de reemplazar el texto completo como translateByDict).
+// Sustituye un termino dentro de un texto mas largo, en vez de reemplazarlo
+// completo como translateByDict.
 function replaceTerm(e, from, to) {
     const value = e.textContent;
     const translated = value.replace(from, to);
@@ -55,8 +225,6 @@ function replaceTerm(e, from, to) {
     }
 }
 
-// Repetido 3 veces de forma casi identica (carga inicial, cambios de texto en
-// vivo, y el observer de respaldo): una sola fuente de verdad.
 const GLOBAL_SHOUTS = {
     "GAME OVER": "FIN DEL JUEGO",
     "TWO-MINUTE BLITZ": "BLITZ DE DOS MINUTOS",
@@ -69,10 +237,6 @@ function translateGlobalShouts() {
     document.querySelectorAll(".globalshouts .shout").forEach(shout => translateByDict(shout, GLOBAL_SHOUTS));
 }
 
-// Repetido en league_chat_container y room_chat_container con diferencias
-// menores (a room_chat_container le faltaba una entrada y tenia un typo:
-// "inicio" sin tilde en vez de "inicio" del verbo "iniciar"). Una sola copia,
-// completa.
 const CHAT_SYSTEM_MESSAGES = {
     "Welcome to chat! Please remember to be civil to your opponents.":
         "¡Bienvenido al chat! Recuerda respetar a tus oponentes.",
@@ -90,12 +254,134 @@ const CHAT_SYSTEM_MESSAGES = {
     "left the room": "se ha ido de la sala"
 };
 
-// Compartido por "notifications" (el toast/snotify emergente) y
-// "social_notifications_content" (el panel lateral de notificaciones): ambos
-// muestran la misma estructura para "conseguiste un logro" (h1 + nombre del
-// logro + descripcion + "Previous: X (Floor N) (hace Y)" / "New: Z"), pero
-// el toast nunca tuvo esta logica -> los logros aparecian sin traducir ahi.
-// De paso, "Floor" tampoco se traducia en ninguno de los dos sitios.
+// Compartido por zenith_deck_infos y notifications ("desbloqueaste el mod X").
+const ZENITH_MOD_NAMES = {
+    "ADD OR REMOVE MODS": "AGREGAR O QUITAR MODS",
+    "EXPERT MODE": "MODO EXPERTO",
+    "DOUBLE HOLE GARBAGE": "BASURA DE DOBLE AGUJERO",
+    "VOLATILE GARBAGE": "BASURA VOLATIL",
+    "GRAVITY": "GRAVEDAD",
+    "NO HOLD": "SIN RESERVA",
+    "MESSIER GARBAGE": "BASURA MAS DESORDENADA",
+    "INVISIBLE": "INVISIBLE",
+    "ALL-SPIN": "TODOS LOS SPINS",
+    "DUO": "DUO"
+};
+
+// Mismos mods en Title Case (asi los pone tetrio.js en el atributo "title"
+// de los iconos de mods), con las 11 variantes "reversed". Claves distintas
+// de ZENITH_MOD_NAMES (en MAYUSCULAS) porque JS no ignora mayus/minus.
+const ZENITH_MOD_TITLES = {
+    "Invisible": "Invisible",
+    "Messier Garbage": "Basura Mas Desordenada",
+    "Volatile Garbage": "Basura Volatil",
+    "No Hold": "Sin Reserva",
+    "Double Hole Garbage": "Basura de Doble Agujero",
+    "All-Spin": "Todos los Spins",
+    "Gravity": "Gravedad",
+    "Expert Mode": "Modo Experto",
+    "Duo": "Duo",
+    "Snowball Board": "Tablero de Bola de Nieve",
+    "Permafrost Board": "Tablero de Permafrost",
+    "The Exile": "El Exiliado",
+    "Loaded Dice": "Dados Cargados",
+    "Last Stand": "Ultima Resistencia",
+    "Asceticism": "Ascetismo",
+    "Damnation": "Condenacion",
+    "The Warlock": "El Brujo",
+    "Freefall": "Caida Libre",
+    "The Tyrant": "El Tirano",
+    "Bleeding Hearts": "Corazones Sangrantes"
+};
+
+// Aplica ZENITH_MOD_TITLES a todos los <img title="..."> de mods de Zenith
+// dentro de root (resultados, records, party, embeds de chat).
+function translateModTitles(root) {
+    root.querySelectorAll("img[title]").forEach(img => translateAttrByDict(img, "title", ZENITH_MOD_TITLES));
+}
+
+const RECORD_LIST_GAMEMODES = {
+    "RECENT": "RECIENTES",
+    "40 LINES": "40 LINEAS",
+    "BLITZ": "BLITZ",
+    "QUICK PLAY": "PARTIDA RAPIDA",
+    "expert quick play": "partida rapida experta",
+    "TETRA LEAGUE": "LIGA TETRA"
+};
+
+// Compartido por tetra_myrecords (mis records) y tetra_records (leaderboard
+// global): pintan su lista con las mismas clases.
+function translateRecordList(e) {
+    e.querySelectorAll(".scroller_block.nothing").forEach(el => {
+        if (el.textContent.trim() === "NO RECORDS") {
+            text(el, "SIN REGISTROS");
+        }
+    });
+
+    e.querySelectorAll(".record_owner").forEach(el => {
+        el.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) {
+                return;
+            }
+
+            const value = node.textContent;
+
+            const translated = value
+                .replace(/\b40 LINES\b/g, "40 LINEAS")
+                .replace(/\bQUICK PLAY\b/g, "PARTIDA RAPIDA")
+                .replace(/\btetra league\b/g, "liga tetra")
+                .replace(/\bTETRA LEAGUE\b/g, "LIGA TETRA");
+
+            if (translated !== value) {
+                node.textContent = translated;
+            }
+        });
+    });
+
+    e.querySelectorAll(".record_extra").forEach(el => {
+        el.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) {
+                return;
+            }
+
+            const value = node.textContent;
+
+            const translated = value
+                .replace(/\bpieces\b/g, "piezas")
+                .replace(/\bavg\. speed\b/g, "velocidad media")
+                .replace(/\bpeak\b/g, "maximo")
+                .replace(/\bKO's\b/g, "KO");
+
+            if (translated !== value) {
+                node.textContent = translated;
+            }
+        });
+    });
+
+    e.querySelectorAll(".record_result").forEach(el => {
+        el.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) {
+                return;
+            }
+
+            const value = node.textContent;
+
+            const translated = value
+                .replace("íîïîêý", "íîûûøýê")
+                .replace("ÿòìýøûĂ", "ÿòìýøûòê");
+
+            if (translated !== value) {
+                node.textContent = translated;
+            }
+        });
+    });
+
+    translateModTitles(e);
+}
+
+// Compartido por "notifications" (toast) y "social_notifications_content"
+// (panel lateral): misma estructura de logro (h1 + nombre + descripcion +
+// "Previous:"/"New:").
 function applyAchievementNotification(notification) {
     const h1 = notification.querySelector("h1");
 
@@ -152,8 +438,7 @@ function applyAchievementNotification(notification) {
     });
 }
 
-// Repetido 20 veces en 05-translations.js: el bloque "cuanto mas, cuanto
-// menos" (name/lower/upper) que cuelga de .video_stat en el panel de video.
+// Bloque name/lower/upper de .video_stat en el panel de video.
 function video_stat(e, name, lower, upper, title) {
     const stat = e.closest(".video_stat");
 

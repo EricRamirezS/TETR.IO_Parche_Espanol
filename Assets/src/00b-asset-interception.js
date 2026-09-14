@@ -3,18 +3,17 @@
 ====================================== */
 
 // Algunas imagenes de /res/ las carga tetrio.js directo a un <canvas>/WebGL
-// (fondos de tablero, particulas, skins) en vez de insertarlas como <img> del
-// DOM -> no se pueden traducir despues (una vez cargadas ya quedaron "horneadas"
-// en una textura), hay que sustituirlas ANTES de que el juego las pida.
-//
-// Por eso este bloque tiene que ejecutarse lo antes posible: preload.js
-// siempre corre antes que el script de la pagina, y en la extension el
-// manifest usa "run_at": "document_start" para llegar a tiempo.
-//
-// Nunca tocamos el codigo de tetrio.js: solo interceptamos APIs estandar del
-// navegador (fetch, XMLHttpRequest, Image/HTMLImageElement) que cualquier
-// cargador de assets tiene que usar. Si una imagen se carga por otra via
-// (por ejemplo un "background-image" de CSS) esto no la alcanza.
+// en vez de un <img> del DOM -> hay que sustituirlas ANTES de que el juego
+// las pida, interceptando fetch/XHR/Image igual que cualquier cargador de
+// assets. Por eso corre lo antes posible (preload.js, o document_start en
+// la extension).
+
+// Sin extension a proposito: la clave es la RUTA que pide el juego, no el
+// formato del reemplazo (asi un .webp puede reemplazar un .png). Solo quita
+// el ULTIMO "punto+extension" (p.ej. "base.2x.png" -> "base.2x").
+function stripExtension(path) {
+    return path.replace(/\.[a-zA-Z0-9]+$/, "");
+}
 
 function resKeyFromUrl(url) {
     if (!url) return null;
@@ -24,7 +23,7 @@ function resKeyFromUrl(url) {
         const pathname = new URL(url, location.href).pathname;
         const idx = pathname.indexOf(marker);
 
-        return idx === -1 ? null : pathname.slice(idx + marker.length);
+        return idx === -1 ? null : stripExtension(pathname.slice(idx + marker.length));
     } catch {
         return null;
     }

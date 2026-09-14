@@ -73,6 +73,8 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -81,8 +83,40 @@ jobs:
       - name: Checksums
         run: cd dist && sha256sum * | tee SHA256SUMS.txt
 
+      - name: Generar notas de lanzamiento (CHANGELOG.md + plantilla)
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+
+          # Extrae el bloque entre "## [VERSION] - fecha" y el siguiente "## [".
+          # index() en vez de un patron regex: evita pelear con el doble
+          # escapado de "[" "]" "." entre el string literal de awk y el
+          # motor de regex ("[1.2.3]" se interpretaba como clase de caracteres).
+          CHANGELOG_SECTION="$(awk -v target="## [$VERSION]" '
+            index($0, target) == 1 { found=1; next }
+            found && index($0, "## [") == 1 { exit }
+            found { print }
+          ' CHANGELOG.md)"
+
+          if [ -z "$(printf '%s' "$CHANGELOG_SECTION" | tr -d '[:space:]')" ]; then
+            echo "::warning::No se encontro '## [$VERSION]' en CHANGELOG.md. Agrega esa seccion antes de publicar para que las notas de lanzamiento incluyan el registro de cambios."
+            CHANGELOG_SECTION="_(sin registro de cambios para esta version en CHANGELOG.md)_"
+          fi
+
+          envsubst '${REPO} ${TAG}' < .github/release_notes_template.md > /tmp/release_template.md
+
+          # Fuera de dist/ a proposito: dist/* se sube tal cual como binarios
+          # adjuntos del release, este archivo es solo el cuerpo del texto.
+          awk -v changelog="$CHANGELOG_SECTION" '
+            /<!--CHANGELOG-->/ { print changelog; next }
+            { print }
+          ' /tmp/release_template.md > RELEASE_NOTES.md
+
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true

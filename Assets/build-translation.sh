@@ -17,6 +17,7 @@ cd "$(dirname "$0")"
 parts_before_images=(
     src/00-header.js
     src/00b-asset-interception.js
+    src/00c-appcode-string-patch.js
     src/01-data-countries.js
     src/02-data-achievements.js
     src/03-data-badges.js
@@ -39,13 +40,16 @@ for part in "${parts_before_images[@]}" "${parts_after_images[@]}"; do
 done
 
 # Convierte cada imagen en Assets/images/res/ (creadas por el proyecto, ver
-# images/README.md) a una entrada "ruta/relativa.png": "data:...;base64,...".
-# La clave es la ruta relativa a images/res/, igual que la sirve TETR.IO bajo
-# /res/ (necesario porque /res/ repite nombres de archivo en carpetas distintas).
+# images/README.md) a una entrada "ruta/relativa": "data:...;base64,...".
+# La clave es la ruta relativa a images/res/ SIN extension (a proposito: el
+# formato en el que guardamos el reemplazo -png, webp, lo que sea- no tiene
+# por que coincidir con el que pide tetrio.js bajo /res/; el MIME sí se toma
+# de la extension real del archivo).
 images_block() {
     echo "const replacementImages = {"
 
     local entries=()
+    local -A seen_keys=()
     if [ -d images/res ]; then
         while IFS= read -r f; do
             [ -z "$f" ] && continue
@@ -56,16 +60,25 @@ images_block() {
             case "$ext" in
                 png) mime="image/png" ;;
                 jpg|jpeg) mime="image/jpeg" ;;
+                webp) mime="image/webp" ;;
                 svg) mime="image/svg+xml" ;;
             esac
             [ -z "$mime" ] && continue
 
             local rel="${f#images/res/}"
+            rel="${rel%.*}"
+
+            if [ -n "${seen_keys[$rel]:-}" ]; then
+                echo "Dos imagenes distintas apuntan a la misma clave \"$rel\": ${seen_keys[$rel]} y $f" >&2
+                exit 1
+            fi
+            seen_keys[$rel]=$f
+
             local b64
             b64="$(base64 "$f" | tr -d '\n')"   # sin -w0: portable entre GNU y BSD base64
 
             entries+=("    \"$rel\": \"data:$mime;base64,$b64\"")
-        done < <(find images/res -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.svg" \) | sort)
+        done < <(find images/res -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" -o -iname "*.svg" \) | sort)
     fi
 
     if [ ${#entries[@]} -gt 0 ]; then

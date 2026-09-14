@@ -9,13 +9,14 @@
       "matches": ["https://tetr.io/*"],
       "js": ["content.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": false,
+      "world": "MAIN"
     }
   ],
   "browser_specific_settings": {
     "gecko": {
       "id": "{dbd678e4-ebaa-45f8-bf64-772c4741495f}",
-      "strict_min_version": "109.0"
+      "strict_min_version": "128.0"
     }
   }
 }

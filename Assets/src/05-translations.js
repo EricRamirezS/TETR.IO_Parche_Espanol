@@ -1,4 +1,15 @@
 const translations = {
+    // Se llena async con .innerHTML tras el modal de error de conexion, con
+    // uno de estos 3 mensajes fijos.
+    "networkerror_fault_indicator": (e) => translateByDict(e, {
+        "this disconnect was detected to be caused by your network connection.":
+            "<br>este corte se detecto como causado por tu conexion de red.",
+        "due to browser limitations, tabbing out of TETR.IO midgame may cause disconnects.":
+            "<br>por limitaciones del navegador, cambiar de pestaña durante una partida de TETR.IO puede causar desconexiones.",
+        "if you are certain this error is not on your side, please report it.":
+            "<br>si estas seguro de que este error no es de tu lado, por favor reportalo."
+    }),
+
     // scroller_item
     "play_returntoroom": (e) => scroller_item(e, "VOLVER A LA PARTIDA"),
     "play_multi": (e) => scroller_item(e, "MULTIJUGADOR", "juega en linea con amigos y rivales"),
@@ -13,7 +24,10 @@ const translations = {
     "game_custom": (e) => scroller_item(e, "PERSONALIZADO", "juega, entrena y experimenta con tus propias reglas"),
 
     "multi_quickplay": (e) => scroller_item(e, "PARTIDA RAPIDA", "sube por la torre; hasta donde puedes llegar?"),
-    "multi_league": (e) => scroller_item(e, "LIGA TETRA", "enfrentate a jugadores de tu nivel en duelos clasificatorios"),
+    "multi_league": (e) => {
+        scroller_item(e, "LIGA TETRA", "enfrentate a jugadores de tu nivel en duelos clasificatorios");
+        attr(e, "data-block-reason", "LOS USUARIOS ANONIMOS NO PUEDEN ENTRAR A LIGA TETRA");
+    },
     "multi_createroom": (e) => scroller_item(e, "PARTIDA PERSONALIZADA", "crea salas publicas y privadas para jugar con tus propias reglas"),
     "multi_listing": (e) => scroller_item(e, "LISTA DE SALAS", "unete a partidas publicas"),
 
@@ -33,7 +47,10 @@ const translations = {
 
     "multi_royale": (e) => scroller_item(e, "ROYALE", "enfrentate a los mejores en una unica sala compartida por todos"),
 
-    "config_account": (e) => scroller_item(e, "CUENTA", "cambia la configuracion de tu cuenta"),
+    "config_account": (e) => {
+        scroller_item(e, "CUENTA", "cambia la configuracion de tu cuenta");
+        attr(e, "data-block-reason", "LOS USUARIOS ANONIMOS NO PUEDEN EDITAR SU CUENTA");
+    },
     "config_electron": (e) => scroller_item(e, "<span class='cheeky'>TETRIO</span>&nbsp;DE ESCRITORIO", "cambia la configuracion de&nbsp;<span class='cheeky'>TETRIO</span>&nbsp;DE ESCRITORIO"),
     "config_export": (e) => scroller_item(e, "EXPORTAR CONFIGURACION", "descarga un archivo .TTC con tu configuracion que puedes arrastrar a&nbsp;<span class='cheeky'>TETRIO</span>&nbsp;para importarla"),
     "config_account_orders": (e) => scroller_item(e, "HISTORIAL DE PEDIDOS", "consulta tus pedidos anteriores"),
@@ -216,6 +233,18 @@ const translations = {
         if (copy) copy.textContent = "haz clic para copiar la url";
     },
 
+    // "{GAMEMODE} KNOCKOUT" (ft=1, wb=1) -> el gamemode varia (ROYALE, 40
+    // LINES, etc.), asi que se detecta el sufijo generico "KNOCKOUT" y se
+    // reordena en vez de traducir la palabra sola en el mismo orden.
+    "roommodeblurb": (e) => {
+        const value = e.textContent.trim();
+        const knockoutMatch = value.match(/^(.+) KNOCKOUT$/);
+
+        if (knockoutMatch) {
+            text(e, `ELIMINACION ${knockoutMatch[1]}`);
+        }
+    },
+
     "roomlisting_refresh": (e) => text(e, "ACTUALIZAR"),
 
     "roomid_change": (e) => e.textContent = "EDITAR",
@@ -224,7 +253,7 @@ const translations = {
     "ownstats": (e) => {
         const dict = {
             "TIME SURVIVED": "TIEMPO SOBREVIVIDO",
-            "KO'S": "KOs",
+            "KO'S": "ELIMINACIONES",
             "LINES SENT": "LINEAS ENVIADAS",
             "LINES RECEIVED": "LINEAS RECIBIDAS",
             "ATTACK per MINUTE": "ATAQUE POR MINUTO",
@@ -261,7 +290,29 @@ const translations = {
         }
     },
     "swb_addendum": (e) => text(e, "haz clic para cambiar a ESPECTADORES"),
-    "room_auto_info": (e) => text(e, "esperando jugadores"),
+    // Antes forzaba siempre "esperando jugadores", sin importar el estado
+    // real (activo con cuenta regresiva, en partida, o vacio).
+    "room_auto_info": (e) => {
+        if (translateByDict(e, {
+            "waiting for players": "esperando jugadores",
+            "good luck!": "¡buena suerte!"
+        })) {
+            return;
+        }
+
+        e.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) return;
+
+            const translated = node.textContent.replace("starting in ", "comienza en ");
+
+            if (translated !== node.textContent) node.textContent = translated;
+        });
+    },
+    "room_syscontent_status": (e) => translateByDict(e, {
+        "STARTING IN": "COMIENZA EN",
+        "WAITING FOR PLAYERS": "ESPERANDO JUGADORES",
+        "GAME IN PROGRESS, GOOD LUCK!": "PARTIDA EN CURSO, ¡BUENA SUERTE!"
+    }),
     "room_ingame_warning": (e) => text(e, 'EN PARTIDA<div id="igw_addendum"><div id="igw_spectate" data-hover="hover" data-hit="confirm">ESPECTAR</div> O <div id="igw_zen" data-hover="hover" data-hit="confirm">ZEN</div></div>'),
     "startroom": (e) => text(e, 'INICIAR<div id="sr_playercount">0 JUGADORES</div>'),
 
@@ -283,6 +334,8 @@ const translations = {
         e.querySelectorAll(
             ".chat_banner p, .chat_message.system p"
         ).forEach(p => translateByDict(p, CHAT_SYSTEM_MESSAGES));
+
+        translateModTitles(e);
     },
     "referee_top": (e) => replaceTerm(e, "TETRA LEAGUE", "LIGA TETRA"),
 
@@ -560,7 +613,7 @@ const translations = {
 
                 const value = node.textContent;
                 const translated = value
-                    .replace("ko's", "KO")
+                    .replace("ko's", "eliminados")
                     .replace("sent", "enviadas")
                     .replace("received", "recibidas");
 
@@ -622,14 +675,25 @@ const translations = {
                 text(h1, "MANEJO");
             }
         });
+
+        translateModTitles(e);
     },
+
+    "pbdisplay_zenith_inner": (e) => translateModTitles(e),
+    "pbdisplay_zenithex_inner": (e) => translateModTitles(e),
+    "zenith_party_self_mods": (e) => translateModTitles(e),
+    "zenith_party_other_mods": (e) => translateModTitles(e),
+    "zenith_result": (e) => translateModTitles(e),
 
     "start_results": (e) => {
         text(e, "OTRA VEZ");
         e.style.width = "6.25em";
     },
 
-    "watchreplay_results": (e) => text(e, "REPETICION"),
+    "watchreplay_results": (e) => {
+        text(e, "REPETICION")
+        e.style.width = "7em"
+    },
 
     "results_stats_set_overview": (e) => text(e, "RESUMEN"),
 
@@ -724,26 +788,10 @@ const translations = {
             text(heading, "YO");
         }
 
-        const gameModes = {
-            "RECENT": "RECIENTES",
-            "40 LINES": "40 LINEAS",
-            "BLITZ": "BLITZ",
-            "QUICK PLAY": "PARTIDA RAPIDA",
-            "expert quick play": "partida rapida experta",
-            "TETRA LEAGUE": "LIGA TETRA"
-        };
-
         const menu = e.closest('[data-menuview="tetra_me"]');
 
         if (menu) {
-            menu.querySelectorAll(".tetra_myrecords_gamemode").forEach(el => {
-                const value = el.textContent.trim();
-                const translated = gameModes[value];
-
-                if (translated && translated !== value) {
-                    text(el, translated);
-                }
-            });
+            menu.querySelectorAll(".tetra_myrecords_gamemode").forEach(el => translateByDict(el, RECORD_LIST_GAMEMODES));
 
             const myPage = menu.querySelector("#tetra_jump_mypage");
 
@@ -757,77 +805,12 @@ const translations = {
             }
         }
 
-        e.querySelectorAll(".scroller_block.nothing").forEach(el => {
-            if (el.textContent.trim() === "NO RECORDS") {
-                text(el, "SIN REGISTROS");
-            }
-        });
+        translateRecordList(e);
+    },
+    "tetra_records": (e) => {
+        e.querySelectorAll(".tetra_records_gamemode").forEach(el => translateByDict(el, RECORD_LIST_GAMEMODES));
 
-        e.querySelectorAll(".record_owner").forEach(el => {
-            el.childNodes.forEach(node => {
-                if (node.nodeType !== Node.TEXT_NODE) {
-                    return;
-                }
-
-                const value = node.textContent;
-
-                const translated = value
-                    .replace(/\b40 LINES\b/g, "40 LINEAS")
-                    .replace(/\bQUICK PLAY\b/g, "PARTIDA RAPIDA")
-                    .replace(/\btetra league\b/g, "liga tetra")
-                    .replace(/\bTETRA LEAGUE\b/g, "LIGA TETRA");
-
-                if (translated !== value) {
-                    node.textContent = translated;
-                }
-            });
-        });
-
-        e.querySelectorAll(".record_extra").forEach(el => {
-            el.childNodes.forEach(node => {
-                if (node.nodeType !== Node.TEXT_NODE) {
-                    return;
-                }
-
-                const value = node.textContent;
-
-                const translated = value
-                    .replace(/\bpieces\b/g, "piezas")
-                    .replace(/\bavg\. speed\b/g, "velocidad media")
-                    .replace(/\bpeak\b/g, "maximo")
-                    .replace(/\bKO's\b/g, "KO");
-
-                if (translated !== value) {
-                    node.textContent = translated;
-                }
-            });
-        });
-
-        e.querySelectorAll(".record_result").forEach(el => {
-            el.childNodes.forEach(node => {
-                if (node.nodeType !== Node.TEXT_NODE) {
-                    return;
-                }
-
-                const value = node.textContent;
-
-                const translated = value
-                    .replace("íîïîêý", "íîûûøýê")
-                    .replace("ÿòìýøûĂ", "ÿòìýøûòê");
-                    
-                if (translated !== value) {
-                    node.textContent = translated;
-                }
-            });
-        });
-
-        e.querySelectorAll('.record_result img[title]').forEach(img => {
-            const value = img.getAttribute("title");
-
-            if (value === "Gravity") {
-                attr(img, "title", "Gravedad");
-            }
-        });
+        translateRecordList(e);
     },
     "tetra_players": (e) => {
         const h1 = e.querySelector("h1");
@@ -982,10 +965,12 @@ const translations = {
         });
 
         if (timer) {
-            const bold = timer.querySelector("b");
-
-            if (bold) {
-                timer.firstChild.textContent = "LAS CLASIFICACIONES SE ACTUALIZAN EN ";
+            if (timer.querySelector("b")) {
+                translateZenithTimer(
+                    timer,
+                    "LAS CLASIFICACIONES SE ACTUALIZAN EN ",
+                    "LAS CLASIFICACIONES SE ACTUALIZARON HACE "
+                );
             } else {
                 text(timer, "LAS CLASIFICACIONES SE ACTUALIZAN PRONTO");
             }
@@ -1152,7 +1137,7 @@ const translations = {
             "rotar en sentido antihorario",
             "rotar en sentido horario",
             "rotar 180",
-            "intercambiar pieza en HOLD",
+            "intercambiar pieza en RESERVA",
             "abandonar partida",
             "reintentar partida",
             "abrir chat",
@@ -1167,9 +1152,16 @@ const translations = {
 
         rows.forEach((row, index) => {
             const label = row.querySelector("td:first-child");
+            const keys = row.querySelector("td:last-child");
 
             if (label && translations[index]) {
                 text(label, translations[index]);
+            }
+
+            if (keys) {
+                const value = keys.textContent;
+                const translated = translateKeybindReference(value);
+                if (translated !== value) text(keys, translated);
             }
         });
     },
@@ -1182,7 +1174,7 @@ const translations = {
             "rotar en sentido antihorario",
             "rotar en sentido horario",
             "rotar 180",
-            "intercambiar pieza en HOLD",
+            "intercambiar pieza en RESERVA",
             "abandonar partida",
             "reintentar partida",
             "abrir chat",
@@ -1197,9 +1189,16 @@ const translations = {
 
         rows.forEach((row, index) => {
             const label = row.querySelector("td:first-child");
+            const keys = row.querySelector("td:last-child");
 
             if (label && translations[index]) {
                 text(label, translations[index]);
+            }
+
+            if (keys) {
+                const value = keys.textContent;
+                const translated = translateKeybindReference(value);
+                if (translated !== value) text(keys, translated);
             }
         });
     },
@@ -1212,7 +1211,7 @@ const translations = {
             "rotar en sentido antihorario",
             "rotar en sentido horario",
             "rotar 180",
-            "intercambiar pieza en HOLD",
+            "intercambiar pieza en RESERVA",
             "abandonar partida",
             "reintentar partida",
             "abrir chat",
@@ -1257,6 +1256,15 @@ const translations = {
 
             if (originalTitle && titles[originalTitle]) {
                 attr(label, "title", titles[originalTitle]);
+            }
+        });
+
+        e.querySelectorAll(".keybind_custom").forEach(el => {
+            const value = el.textContent.trim();
+            const translated = normalizeKeybindName(value);
+
+            if (translated !== value) {
+                text(el, translated);
             }
         });
     },
@@ -1389,7 +1397,7 @@ const translations = {
                 }
 
                 if (value === "HOLD BUFFERING (IHS)") {
-                    text(h1, "BUFFER DE HOLD (IHS)");
+                    text(h1, "BUFFER DE RESERVA (IHS)");
                 }
             });
         }
@@ -1532,7 +1540,7 @@ const translations = {
 
     "handling_ihs_off": (e) => {
         text(e, "DESACTIVADO");
-        attr(e, "title", "No permitir pulsar HOLD entre piezas.");
+        attr(e, "title", "No permitir pulsar RESERVA entre piezas.");
     },
 
     "handling_ihs_hold": (e) => {
@@ -1540,7 +1548,7 @@ const translations = {
         attr(
             e,
             "title",
-            "La siguiente pieza se guarda en HOLD si la tecla se mantiene pulsada cuando aparece la pieza."
+            "La siguiente pieza se guarda en RESERVA si la tecla se mantiene pulsada cuando aparece la pieza."
         );
     },
 
@@ -1549,7 +1557,7 @@ const translations = {
         attr(
             e,
             "title",
-            "La siguiente pieza se guarda en HOLD si se introduce cualquier entrada de HOLD entre piezas."
+            "La siguiente pieza se guarda en RESERVA si se introduce cualquier entrada de RESERVA entre piezas."
         );
     },
 
@@ -1842,11 +1850,11 @@ const translations = {
     },
 
     "video_holdlocked": (e) => {
-        text(e, "atenuar pieza de HOLD bloqueada");
+        text(e, "atenuar pieza de RESERVA bloqueada");
         attr(
             e,
             "title",
-            "Si esta activado, la pieza de HOLD aparecera atenuada si no puede utilizarse."
+            "Si esta activado, la pieza de RESERVA aparecera atenuada si no puede utilizarse."
         );
     },
     "video_graphics_minimal": (e) => {
@@ -3100,28 +3108,16 @@ const translations = {
             }
         });
     },
-    "zenith_zenithtimer": (e) => {
-        const bold = e.querySelector("b");
-
-        if (!bold) {
-            return;
-        }
-
-        const textNode = e.firstChild;
-
-        if (
-            textNode &&
-            textNode.textContent !== "LA CLASIFICACION SE ACTUALIZA EN "
-        ) {
-            textNode.textContent = "LA CLASIFICACION SE ACTUALIZA EN ";
-        }
-
-        const value = bold.textContent;
-
-        if (value.includes(" DAYS")) {
-            bold.textContent = value.replace(" DAYS", " DIAS");
-        }
-    },
+    "zenith_zenithtimer": (e) => translateZenithTimer(
+        e,
+        "LA CLASIFICACION SE ACTUALIZA EN ",
+        "LA CLASIFICACION SE ACTUALIZO HACE "
+    ),
+    "zenithresults_zenithtimer": (e) => translateZenithTimer(
+        e,
+        "LA CLASIFICACION SE ACTUALIZA EN ",
+        "LA CLASIFICACION SE ACTUALIZO HACE "
+    ),
     "zenith_contribution": (e) => {
         const block = e.closest(".scroller_block");
         if (!block) return;
@@ -3192,9 +3188,12 @@ const translations = {
         if (ready) text(ready, "LISTO!");
     },
 
-    "zenith_party_ready_label": (e) => {
-        text(e, "LISTO");
-    },
+    // Antes forzaba siempre "LISTO", incluso cuando el texto real era
+    // "WAITING" (el otro jugador del Duo aun no confirmo listo).
+    "zenith_party_ready_label": (e) => translateByDict(e, {
+        "READY": "LISTO",
+        "WAITING": "ESPERANDO"
+    }),
     "zenith_deck_nag": (e) => {
         const inner = e.querySelector("#zenith_deck_nag_inner");
 
@@ -3204,18 +3203,7 @@ const translations = {
         }
     },
     "zenith_deck_infos": (e) => {
-        const names = {
-            "ADD OR REMOVE MODS": "AGREGAR O QUITAR MODS",
-            "EXPERT MODE": "MODO EXPERTO",
-            "DOUBLE HOLE GARBAGE": "BASURA DE DOBLE AGUJERO",
-            "VOLATILE GARBAGE": "BASURA VOLATIL",
-            "GRAVITY": "GRAVEDAD",
-            "NO HOLD": "SIN HOLD",
-            "MESSIER GARBAGE": "BASURA MAS DESORDENADA",
-            "INVISIBLE": "INVISIBLE",
-            "ALL-SPIN": "TODOS LOS SPINS",
-            "DUO": "DUO"
-        };
+        const names = ZENITH_MOD_NAMES;
 
         const descriptions = {
             "a less lenient challenge, for those who dare":
@@ -3235,7 +3223,7 @@ const translations = {
             "reach floor 4 to unlock":
                 "alcanza el piso 4 para desbloquear",
             "hold piece is disabled":
-                "la pieza de HOLD esta desactivada",
+                "la pieza de RESERVA esta desactivada",
             "reach floor 2 to unlock":
                 "alcanza el piso 2 para desbloquear",
             "garbage is significantly messier":
@@ -3272,7 +3260,7 @@ const translations = {
     "zenith_deck_cards": (e) => {
         e.querySelectorAll(".zenith_card[data-card]").forEach(card => {
             const front = card.querySelector(".zenith_card_front");
-            const key = `zenith-mods/${card.dataset.card}.png`;
+            const key = `zenith-mods/${card.dataset.card}`;
 
             if (front && replacementImages[key]) {
                 attr(front, "src", replacementImages[key]);
@@ -3320,7 +3308,7 @@ const translations = {
             "KEYS PRESSED": "TECLAS PULSADAS",
             "KEYS per PIECE": "TECLAS POR PIEZA",
             "KEYS per SECOND": "TECLAS POR SEGUNDO",
-            "HOLDS": "HOLDS",
+            "HOLDS": "RESERVAS",
             "SCORE": "PUNTUACION",
             "TIME": "TIEMPO",
             "LINES": "LINEAS",
@@ -3338,14 +3326,14 @@ const translations = {
 
     "results_stats_full": (e) => {
         const dict = {
-            "SINGLES": "SINGLES",
+            "SINGLES": "SIMPLES",
             "DOUBLES": "DOBLES",
             "TRIPLES": "TRIPLES",
             "QUADS": "CUADRUPLES",
             "spins": "spins",
             "spin MINIS": "MINIS DE SPIN",
-            "spin MINI SINGLES": "SINGLES MINI DE SPIN",
-            "spin SINGLES": "SINGLES DE SPIN",
+            "spin MINI SINGLES": "SIMPLES MINI DE SPIN",
+            "spin SINGLES": "SIMPLES DE SPIN",
             "spin MINI DOUBLES": "DOBLES MINI DE SPIN",
             "spin DOUBLES": "DOBLES DE SPIN",
             "spin MINI TRIPLES": "TRIPLES MINI DE SPIN",
@@ -3508,6 +3496,10 @@ const translations = {
             text(welcome, "bienvenido a TETR.IO");
         }
 
+        // ":scope > p" a proposito: e (#entry_form) tambien contiene
+        // .preform con sus propios <p> (traducidos arriba) -> un
+        // querySelectorAll("p") sin scope los cuenta tambien y desplaza
+        // estos indices, pisando "jugadores totales"/"partidas jugadas".
         const paragraphs = e.querySelectorAll(":scope > p");
 
         if (paragraphs[0]) {
@@ -3706,12 +3698,22 @@ const translations = {
         const continueButton = e.querySelector("#registeralt_continue");
         const img = e.querySelector("img");
 
-        if (img && replacementImages["altpolicy.png"]) {
-            attr(img, "src", replacementImages["altpolicy.png"]);
+        if (img && replacementImages["altpolicy"]) {
+            attr(img, "src", replacementImages["altpolicy"]);
         }
 
+        // No se reconstruye el h1 completo: el <span> ya trae el nombre de
+        // usuario puesto por tetrio.js (xt("registeralt_username")
+        // .textContent = ...) antes de que este codigo corra. Sobrescribir
+        // el innerHTML del h1 crea un span nuevo vacio y lo pierde.
         if (h1) {
-            h1.innerHTML = 'ERES&nbsp;<span id="registeralt_username"></span>?';
+            h1.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) return;
+
+                const translated = node.textContent.replace("are you", "eres");
+
+                if (translated !== node.textContent) node.textContent = translated;
+            });
         }
 
         if (paragraphs[0]) {
@@ -3886,7 +3888,7 @@ const translations = {
 
         const labels = {
             "LEVELING": "SUBIR DE NIVEL",
-            "INFINITE HOLD": "HOLD INFINITO",
+            "INFINITE HOLD": "RESERVA INFINITA",
             "UNDO/REDO": "DESHACER/REHACER",
             "static gravity": "gravedad estatica",
             "cheese messiness %": "desorden de la basura %"
@@ -3938,8 +3940,8 @@ const translations = {
             "Level up every now and then.": "Subir de nivel de vez en cuando.",
             "Level up every now and then without interrupting gameplay.": "Subir de nivel de vez en cuando sin interrumpir la partida.",
             "Do not level up.": "No subir de nivel.",
-            "Allow infinite holding": "Permitir HOLD infinito.",
-            "Do not allow infinite hold": "No permitir HOLD infinito.",
+            "Allow infinite holding": "Permitir RESERVA infinita.",
+            "Do not allow infinite hold": "No permitir RESERVA infinita.",
             "Receive bonuses for spinning T-pieces.": "Recibir bonificaciones por hacer spins con piezas T.",
             "Receive bonuses for spinning T-pieces. Allows immobile T-piece to count as a Mini.": "Recibir bonificaciones por hacer spins con piezas T. Permite que una pieza T inmovil cuente como Mini.",
             "Receive bonuses for spinning all pieces. Allows immobile T-piece to count as a Mini.": "Recibir bonificaciones por hacer spins con todas las piezas. Permite que una pieza T inmovil cuente como Mini.",
@@ -4411,8 +4413,8 @@ const translations = {
     "social_dm": (e) => {
         const offlineImg = e.querySelector(".social_offline img");
 
-        if (offlineImg && replacementImages["social_offline.png"]) {
-            attr(offlineImg, "src", replacementImages["social_offline.png"]);
+        if (offlineImg && replacementImages["social_offline"]) {
+            attr(offlineImg, "src", replacementImages["social_offline"]);
         }
 
         const offline = e.querySelector(".social_offline p");
@@ -4555,15 +4557,15 @@ const translations = {
 
         const offlineImg = e.querySelector(".social_offline img");
 
-        if (offlineImg && replacementImages["social_offline.png"]) {
-            attr(offlineImg, "src", replacementImages["social_offline.png"]);
+        if (offlineImg && replacementImages["social_offline"]) {
+            attr(offlineImg, "src", replacementImages["social_offline"]);
         }
     },
     "social_people": (e) => {
         const offlineImg = e.querySelector(".social_offline img");
 
-        if (offlineImg && replacementImages["social_offline.png"]) {
-            attr(offlineImg, "src", replacementImages["social_offline.png"]);
+        if (offlineImg && replacementImages["social_offline"]) {
+            attr(offlineImg, "src", replacementImages["social_offline"]);
         }
     },
     "social_notifications_content": (e) => {
@@ -4655,7 +4657,7 @@ const translations = {
             "display your finesse in this slot": "mostrar tu precision en este espacio",
             "FINESSE (SMALLER)": "PRECISION (MAS PEQUENA)",
             "display your finesse in this slot (for use on the left-hand side)": "mostrar tu precision en este espacio (para usar en el lado izquierdo)",
-            "HOLD": "HOLD",
+            "HOLD": "RESERVA",
             "display the amount of held pieces in this slot": "mostrar la cantidad de piezas guardadas en este espacio",
             "ALL CLEARS": "TODOS LOS DESPEJES",
             "display the amount of ALL CLEARS in this slot": "mostrar la cantidad de TODOS LOS DESPEJES en este espacio",
@@ -4664,6 +4666,7 @@ const translations = {
             "PRIVATE ROOM": "SALA PRIVADA",
             "create a public room anyone can join": "crear una sala publica a la que cualquiera puede unirse",
             "create a private room your you and friends": "crea una sala privada para ti y tus amigos",
+            "ANONYMOUS USERS MAY NOT CREATE PUBLIC ROOMS": "LOS USUARIOS ANONIMOS NO PUEDEN CREAR SALAS PUBLICAS",
 
             "RETRY": "REINTENTAR",
             "BACK TO TITLE": "VOLVER AL INICIO",
@@ -4693,6 +4696,8 @@ const translations = {
             }
 
             if (p) translateByDict(p, dict);
+
+            translateAttrByDict(item, "data-block-reason", dict);
         });
     },
     "social_bottom_online": (e) => {
@@ -4704,20 +4709,21 @@ const translations = {
         }
     },
     "majorshouts": (e) => {
-        const shoutTranslations = {
+        const dict = {
             "FINISH!": "¡SE ACABO!",
             "GAME!": "¡FIN DE LA PARTIDA!",
             "TIEBREAKER": "¡FIN DE LA PARTIDA!",
+            "GO!": "¡YA!",
+            "WORLD RECORD!": "¡RECORD MUNDIAL!",
+            "COUNTRY BEST!": "¡MEJOR DEL PAIS!",
+            "PERSONAL BEST!": "¡MEJOR MARCA PERSONAL!",
+            "ABORTED!": "¡ABORTADA!",
+            "NO CONTEST": "SIN RESULTADO",
+            "VICTORY": "VICTORIA",
+            "DEFEAT": "DERROTA"
         };
 
-        e.querySelectorAll(".shout").forEach(shout => {
-            const value = shout.textContent.trim();
-            const translated = shoutTranslations[value];
-
-            if (translated && translated !== value) {
-                text(shout, translated);
-            }
-        });
+        e.querySelectorAll(".shout").forEach(shout => translateByDict(shout, dict));
     },
     "notifications": (e) => {
         const dict = {
@@ -4757,8 +4763,36 @@ const translations = {
             "you must enter a valid email address": "debes ingresar una direccion de correo electronico valida",
             "a connection error has occurred": "se ha producido un error de conexion",
             "game submitted!": "partida enviada",
+
+            "you did a thing!": "¡hiciste algo!",
+            "this replay is outdated and may not play properly": "esta repeticion esta desactualizada y podria no reproducirse correctamente",
+            "your keybinds were reset due to an update. please re-enter them!": "tus controles se reiniciaron debido a una actualizacion. ¡vuelve a configurarlos!",
+            "controller disconnected": "control desconectado",
+            "disconnected from server. reconnecting in a moment…": "desconectado del servidor. reconectando en un momento…",
+            "disconnected from server": "desconectado del servidor",
+            "the previously announced maintenance has been canceled": "el mantenimiento anunciado previamente ha sido cancelado",
+            "your interrupted game has been submitted": "tu partida interrumpida ha sido enviada",
+            "joined your party": "se unio a tu grupo",
+            "left your party": "dejo tu grupo",
+            "A connection error has occured": "Ha ocurrido un error de conexion",
+            "installing a required update... if this seems stuck, hit CTRL+F5 to force a reload": "instalando una actualizacion necesaria... si esto parece atascado, presiona CTRL+F5 para forzar una recarga",
+            "failed to download TETR.IO DESKTOP update. click here to try to update manually!": "fallo la descarga de la actualizacion de TETR.IO DESKTOP. ¡haz clic aqui para intentar actualizar manualmente!",
+            "using LEGACY WEBGL - this may slow down your game. if your device supports it, switch to WEBGL 2 in CONFIG!": "usando LEGACY WEBGL - esto puede ralentizar tu juego. si tu dispositivo lo soporta, cambia a WEBGL 2 en CONFIGURACION!",
+            "you are not using TETR.IO DESKTOP - ULTRA graphics may be less performant.": "no estas usando TETR.IO DESKTOP - los graficos ULTRA pueden rendir peor.",
+            "has come online": "esta en linea",
+            "has gone offline": "se desconecto",
+            "you can set your email under CONFIG > ACCOUNT. …don't say we didn't warn you!":
+                "puedes configurar tu correo en CONFIGURACION > CUENTA. …no digas que no te lo advertimos!",
             "": "",
         };
+
+        e.querySelectorAll(".notification h1").forEach(h1 => translateByDict(h1, {
+            "YOU ARE AWESOME!": "¡ERES INCREIBLE!",
+            "Your match has been canceled": "Tu partida ha sido cancelada",
+            "Match result nullified": "Resultado de la partida anulado",
+            "Enjoyed Duo?": "¿Disfrutaste Duo?",
+            "You are now a TETR.IO Supporter!": "¡Ahora eres Supporter de TETR.IO!"
+        }));
 
         e.querySelectorAll(".notification").forEach(applyAchievementNotification);
 
@@ -4781,6 +4815,44 @@ const translations = {
 
                 const value = node.textContent;
 
+                const unlockMatch = value.match(/^you've unlocked the (.+) mod(s?)!$/);
+
+                if (unlockMatch) {
+                    const [, modsList, plural] = unlockMatch;
+                    const translatedMods = Object.entries(ZENITH_MOD_NAMES).reduce(
+                        (list, [en, es]) => list.replaceAll(en, es),
+                        modsList
+                    );
+
+                    node.textContent = plural
+                        ? `has desbloqueado los mods ${translatedMods}!`
+                        : `has desbloqueado el mod ${translatedMods}!`;
+                    return;
+                }
+
+                const usernameChangeMatch = value.match(/^your username was changed from (.+) to (.+)\.$/);
+
+                if (usernameChangeMatch) {
+                    const [, from, to] = usernameChangeMatch;
+                    node.textContent = `tu nombre de usuario cambio de ${from} a ${to}.`;
+                    return;
+                }
+
+                const masteredMatch = value.match(/^you've mastered the (.+) mod(s?)!$/);
+
+                if (masteredMatch) {
+                    const [, modsList, plural] = masteredMatch;
+                    const translatedMods = Object.entries(ZENITH_MOD_NAMES).reduce(
+                        (list, [en, es]) => list.replaceAll(en, es),
+                        modsList
+                    );
+
+                    node.textContent = plural
+                        ? `has dominado los mods ${translatedMods}!`
+                        : `has dominado el mod ${translatedMods}!`;
+                    return;
+                }
+
                 const translated = value
                     .replace("online now", "en linea ahora")
                     .replace("days ago", "dias atras")
@@ -4788,7 +4860,34 @@ const translations = {
                     .replace("hours ago", "horas atras")
                     .replace("hour ago", "hora atras")
                     .replace("minutes ago", "minutos atras")
-                    .replace("minute ago", "minuto atras");
+                    .replace("minute ago", "minuto atras")
+                    .replace("controller connected", "control conectado")
+                    .replace(/^connected to server/, "conectado al servidor")
+                    .replace(/^switching server…/, "cambiando de servidor…")
+                    .replace(/^server switched/, "servidor cambiado")
+                    .replace("has gifted you ", "te regalo ")
+                    .replace(" of ", " de ")
+                    .replace("Thank you very, ", "Muchas ")
+                    .replace(" much for your insane amount of support. You are now ", " gracias por tu increible cantidad de apoyo. Ahora estas ")
+                    .replace(", as thanks for your support!", ", como agradecimiento por tu apoyo!")
+                    .replace("Both you and ", "Tanto tu como ")
+                    .replace(" have left the match. The match has been declared No Contest: no player is punished, no player's rating is changed.", " han abandonado la partida. La partida se ha declarado Sin Contienda: ningun jugador es penalizado, la puntuacion de nadie cambia.")
+                    .replace("The result of your match with ", "El resultado de tu partida con ")
+                    .replace(" (played ", " (jugada el ")
+                    .replace(") has been nullified.", ") ha sido anulado.")
+                    .replace("As a result, you have gained ", "Como resultado, has ganado ")
+                    .replace("As a result, you have lost ", "Como resultado, has perdido ")
+                    .replace("invited you to team up in ", "te invito a jugar en equipo en ")
+                    .replace("invited you to ", "te invito a ")
+                    .replace("The Duo mod is a ", "El mod Duo es una ")
+                    .replace("TETR.IO Supporter-only feature", "funcion exclusiva para Supporters de TETR.IO")
+                    .replace(" — one of the two players needs Supporter.", " — uno de los dos jugadores necesita ser Supporter.")
+                    .replace(" paid for you this time, but if you want to play Duo with someone who doesn't have Supporter yet, why not ", " pago por ti esta vez, pero si quieres jugar Duo con alguien que aun no tiene Supporter, ¿por que no ")
+                    .replace("help support the game", "ayudas a apoyar el juego")
+                    .replace(" and pick some up?", " y consigues uno?")
+                    .replace("this replay contains one or more unknown options", "esta repeticion contiene una o mas opciones desconocidas")
+                    .replace(" much for supporting TETR.IO. Without support from people like you, TETR.IO could never be what it is now! You're awesome ♥",
+                        " por apoyar a TETR.IO. Sin el apoyo de gente como tu, TETR.IO nunca podria ser lo que es ahora! ¡Eres increible! ♥");
 
                 if (translated !== value) {
                     node.textContent = translated;
@@ -4818,7 +4917,7 @@ const translations = {
         block.querySelector(":scope > h1")?.textContent === "QUICK PLAY" &&
             text(block.querySelector(":scope > h1"), "PARTIDA RAPIDA");
 
-        const paragraphs = block.querySelectorAll(":scope > p");
+        const paragraphs = block.querySelectorAll("p");
 
         if (paragraphs[0]) {
             const value = paragraphs[0].textContent.trim();
@@ -4846,6 +4945,8 @@ const translations = {
         e.querySelectorAll(
             ".chat_banner p, .chat_message.system p"
         ).forEach(p => translateByDict(p, CHAT_SYSTEM_MESSAGES));
+
+        translateModTitles(e);
     },
 
     "afterloader_text": (e) => translateByDict(e, {
@@ -5089,7 +5190,64 @@ const translations = {
         translate(".oob_modal h1", {
             "EXIT TETR.IO?": "¿SALIR DE TETR.IO?",
             "KICKED BY ROOM OWNER": "EXPULSADO POR EL DUENO DE LA SALA",
-            "CONNECTION ERROR": "ERROR DE CONEXION"
+            "CONNECTION ERROR": "ERROR DE CONEXION",
+            "DISABLE THE DUO MOD?": "¿DESACTIVAR EL MOD DUO?",
+            "LEAVE CURRENT GAME?": "¿ABANDONAR LA PARTIDA ACTUAL?",
+            "REALLY DESTROY ZEN PROGRESS?": "¿REALMENTE DESTRUIR EL PROGRESO DE ZEN?",
+            "USERNAME CHANGED": "NOMBRE DE USUARIO CAMBIADO",
+            "WARNING": "ADVERTENCIA",
+            "REMOVE AVATAR": "QUITAR AVATAR",
+            "REMOVE BANNER": "QUITAR BANNER",
+            "START GAME?": "¿INICIAR PARTIDA?",
+            "BANNED BY ROOM OWNER": "EXPULSADO PERMANENTEMENTE POR EL DUENO DE LA SALA",
+            "CLIENT REPLACED": "CONEXION REEMPLAZADA",
+            "LOG OUT?": "¿CERRAR SESION?",
+            "LOG OUT ALL?": "¿CERRAR TODAS LAS SESIONES?",
+            "CHANGE USERNAME?": "¿CAMBIAR NOMBRE DE USUARIO?",
+            "ENABLE TWO-FACTOR AUTHENTICATION": "ACTIVAR AUTENTICACION DE DOS FACTORES",
+            "TWO-FACTOR AUTHENTICATION ENABLED": "AUTENTICACION DE DOS FACTORES ACTIVADA",
+            "RECOVERY CODES RESET": "CODIGOS DE RECUPERACION REINICIADOS",
+            "UPDATE REQUIRED": "ACTUALIZACION REQUERIDA",
+            "KICKED BY MODERATOR": "EXPULSADO POR UN MODERADOR",
+            "BANNED BY MODERATOR": "BANEADO POR UN MODERADOR",
+            "BANNED BY ANTI-CHEAT": "BANEADO POR EL ANTI-TRAMPAS",
+            "YOU WERE LOGGED OUT": "SE CERRO TU SESION",
+            "MAINTENANCE STARTED": "MANTENIMIENTO INICIADO",
+            "PASSWORD REQUESTED": "CONTRASENA REQUERIDA",
+            "IMAGE REJECTED": "IMAGEN RECHAZADA",
+            "hey, you haven't set an email yet!": "oye, ¡aun no has configurado un correo electronico!",
+            "WELCOME TO TETRA LEAGUE": "BIENVENIDO A LIGA TETRA",
+            "IMPORT CONFIG?": "¿IMPORTAR CONFIGURACION?",
+            "DESTROY ZEN PROGRESS?": "¿DESTRUIR EL PROGRESO DE ZEN?",
+            "WEBGL CRASHED": "WEBGL FALLO",
+            "USE LEGACY WEBGL?": "¿USAR LEGACY WEBGL?"
+        });
+
+        translate(".oob_button", {
+            "RELOAD": "RECARGAR",
+            "UPDATE NOW": "ACTUALIZAR AHORA",
+            "SUBMIT": "ENVIAR",
+            "GOT IT": "ENTENDIDO",
+            "GOT IT!": "¡ENTENDIDO!",
+            "NAH, NOT NOW": "NO, AHORA NO",
+            "IMPORT": "IMPORTAR",
+            "CONTINUE": "CONTINUAR",
+            "RESTART": "REINICIAR",
+            "USE LEGACY WEBGL": "USAR LEGACY WEBGL"
+        });
+
+        translate(".oob_modal p", {
+            "are you sure you wish to leave your party?": "¿estas seguro de que quieres salir de tu grupo?",
+            "you're still in game. abandon the current game?": "todavia estas en partida. ¿abandonar la partida actual?",
+            "ARE YOU SURE YOU WON'T REGRET DESTROYING YOUR ZEN PROGRESS???": "¿ESTAS SEGURO DE QUE NO TE ARREPENTIRAS DE DESTRUIR TU PROGRESO DE ZEN???",
+            "your username was changed successfully. from now on, you must log in using your new username.": "tu nombre de usuario se cambio correctamente. a partir de ahora, debes iniciar sesion con tu nuevo nombre de usuario.",
+            "are you sure you wish to upload this image? by uploading an image, you understand that if it is deemed explicit, your account will be restricted.": "¿estas seguro de que quieres subir esta imagen? al subir una imagen, entiendes que si se considera explicita, tu cuenta sera restringida.",
+            "remove your avatar? it'll be replaced by a generic identicon.": "¿quitar tu avatar? sera reemplazado por un identicon generico.",
+            "remove your banner?": "¿quitar tu banner?",
+            "some settings have not yet been saved, if you start the game now, those changes will be lost!": "algunos ajustes aun no se han guardado, si inicias la partida ahora, esos cambios se perderan!",
+            "you were banned from the room by its owner.": "el dueno de la sala te ha expulsado permanentemente.",
+            "you were kicked from the room by its owner.": "el dueno de la sala te ha expulsado.",
+            "you joined this room on another client, replacing this one.": "te uniste a esta sala desde otro dispositivo, reemplazando esta conexion."
         });
 
         translate(".oob_button", {
@@ -5446,7 +5604,7 @@ const translations = {
                 return;
             }
 
-            const paragraphs = dialog.querySelectorAll(":scope > p");
+            const paragraphs = dialog.querySelectorAll("p");
 
             if (paragraphs[0]) {
                 paragraphs[0].childNodes.forEach(node => {
@@ -5466,7 +5624,7 @@ const translations = {
                 });
             }
 
-            const modalAlso = dialog.querySelector(":scope > p.modal_also");
+            const modalAlso = dialog.querySelector("p.modal_also");
 
             if (modalAlso && modalAlso.textContent.trim() === "this cannot be undone.") {
                 text(modalAlso, "esto no se puede deshacer.");
@@ -5488,7 +5646,7 @@ const translations = {
                 return;
             }
 
-            const paragraphs = dialog.querySelectorAll(":scope > p");
+            const paragraphs = dialog.querySelectorAll("p");
 
             if (paragraphs[0]) {
                 paragraphs[0].childNodes.forEach(node => {
@@ -5508,7 +5666,7 @@ const translations = {
                 });
             }
 
-            const modalAlso = dialog.querySelector(":scope > p.modal_also");
+            const modalAlso = dialog.querySelector("p.modal_also");
 
             if (modalAlso && modalAlso.textContent.trim() === "you can never get it back!!!") {
                 text(modalAlso, "¡¡¡nunca podras recuperarla!!!");
@@ -5523,16 +5681,204 @@ const translations = {
             });
         });
 
-        /* ELIMINANDO SKYLUR */
+        /* CERRAR SESION */
 
         e.querySelectorAll(".oob_modal").forEach(dialog => {
             const title = dialog.querySelector("h1");
 
-            if (!title || title.textContent.trim() !== "DELETING SKYLUR") {
+            if (!title || title.textContent.trim() !== "¿CERRAR SESION?") {
                 return;
             }
 
-            text(title, "ELIMINANDO SKYLUR");
+            const paragraph = dialog.querySelector("p");
+
+            if (!paragraph) {
+                return;
+            }
+
+            paragraph.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) {
+                    return;
+                }
+
+                const value = node.textContent;
+                const translated = value.replace("log out from ", "cerrar sesion en ");
+
+                if (translated !== value) {
+                    node.textContent = translated;
+                }
+            });
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿CERRAR TODAS LAS SESIONES?") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (!paragraph) {
+                return;
+            }
+
+            paragraph.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) {
+                    return;
+                }
+
+                const value = node.textContent;
+
+                const translated = value
+                    .replace("log out all devices logged into ", "cerrar sesion en todos los dispositivos conectados a ")
+                    .replace(
+                        ", including this one? this will disconnect you everywhere - use it if you forgot to log out somewhere.",
+                        ", incluido este. esto te desconectara en todas partes - usalo si olvidaste cerrar sesion en algun lugar."
+                    );
+
+                if (translated !== value) {
+                    node.textContent = translated;
+                }
+            });
+        });
+
+        /* CAMBIAR NOMBRE DE USUARIO */
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿CAMBIAR NOMBRE DE USUARIO?") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_also)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) {
+                        return;
+                    }
+
+                    const value = node.textContent;
+
+                    const translated = value
+                        .replace("change your username from ", "cambiar tu nombre de usuario de ")
+                        .replace(" to ", " a ")
+                        .replace(
+                            "? your previous username will be locked and redirect to your new username for 45 days, after which it will be freed. this process will try to rename everywhere it can, but some links may be broken.",
+                            "? tu nombre de usuario anterior quedara bloqueado y redirigira a tu nuevo nombre de usuario durante 45 dias, tras lo cual quedara libre. este proceso intentara renombrarte en todos los lugares posibles, pero algunos enlaces podrian quedar rotos."
+                        );
+
+                    if (translated !== value) {
+                        node.textContent = translated;
+                    }
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso && modalAlso.textContent.trim() === "you can do this only once a month.") {
+                text(modalAlso, "solo puedes hacer esto una vez al mes.");
+            }
+        });
+
+        /* AUTENTICACION DE DOS FACTORES */
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "ACTIVAR AUTENTICACION DE DOS FACTORES") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) {
+                        return;
+                    }
+
+                    const value = node.textContent;
+                    const translated = value.replace(
+                        "scan the following QR code with your favourite authenticator app (like AUTHY or GOOGLE AUTHENTICATOR), then enter the six-digit code into the box below to enable two-factor authentication",
+                        "escanea el siguiente codigo QR con tu app de autenticacion favorita (como AUTHY o GOOGLE AUTHENTICATOR), luego ingresa el codigo de seis digitos en el cuadro de abajo para activar la autenticacion de dos factores"
+                    );
+
+                    if (translated !== value) {
+                        node.textContent = translated;
+                    }
+                });
+
+                const input = paragraph.querySelector("#totp_enable");
+
+                if (input) {
+                    attr(input, "placeholder", "seis digitos");
+                }
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (
+                !title ||
+                (title.textContent.trim() !== "AUTENTICACION DE DOS FACTORES ACTIVADA" &&
+                    title.textContent.trim() !== "CODIGOS DE RECUPERACION REINICIADOS")
+            ) {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (!paragraph) {
+                return;
+            }
+
+            paragraph.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) {
+                    return;
+                }
+
+                const value = node.textContent;
+
+                const translated = value
+                    .replace(
+                        "you've successfully enabled two-factor authentication. now every time you log in, you'll be asked to enter one of those six-digit codes. if you don't have access to your device, you can use one of these codes in place of the 6-digit code:",
+                        "activaste correctamente la autenticacion de dos factores. a partir de ahora, cada vez que inicies sesion, se te pedira ingresar uno de esos codigos de seis digitos. si no tienes acceso a tu dispositivo, puedes usar uno de estos codigos en lugar del codigo de 6 digitos:"
+                    )
+                    .replace(
+                        "here are your new recovery codes, which you may use in place of the 6-digit code:",
+                        "aqui tienes tus nuevos codigos de recuperacion, que puedes usar en lugar del codigo de 6 digitos:"
+                    )
+                    .replace(
+                        "write these down! if you don't have them, and lose access to your device, you won't be able to log in. each of these tokens can only be used once, but you can create new ones at any time. keep them safe!!!",
+                        "¡anota estos codigos! si no los tienes y pierdes el acceso a tu dispositivo, no podras iniciar sesion. cada uno de estos codigos solo se puede usar una vez, pero puedes crear otros nuevos en cualquier momento. ¡mantenlos seguros!"
+                    );
+
+                if (translated !== value) {
+                    node.textContent = translated;
+                }
+            });
+        });
+
+        /* ELIMINANDO CUENTA (nombre de usuario) */
+
+        // Antes comprobaba el titulo exacto "DELETING SKYLUR" y nunca
+        // coincidia para otro usuario. Ahora es un prefijo generico.
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || !title.textContent.trim().startsWith("DELETING ")) {
+                return;
+            }
+
+            const translatedTitle = title.textContent.replace("DELETING ", "ELIMINANDO ");
+
+            if (translatedTitle !== title.textContent) {
+                text(title, translatedTitle);
+            }
 
             const paragraph = dialog.querySelector("p");
 
@@ -5562,6 +5908,649 @@ const translations = {
             if (submit && submit.textContent.trim() === "SUBMIT") {
                 text(submit, "ENVIAR");
             }
+        });
+
+        /* MODERACION */
+
+        translate(".oob_modal h1", {
+            "YOU HAVE BEEN WARNED": "HAS SIDO ADVERTIDO",
+            "AS A STERN REMINDER…": "COMO RECORDATORIO SERIO…",
+            "ENABLE DEVTOOLS?": "¿ACTIVAR DEVTOOLS?"
+        });
+
+        // banreason es texto libre de un moderador, no se traduce.
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "HAS SIDO ADVERTIDO") {
+                return;
+            }
+
+            dialog.querySelectorAll("p").forEach(p => {
+                if (p.classList.contains("modal_also")) {
+                    p.childNodes.forEach(node => {
+                        if (node.nodeType !== Node.TEXT_NODE) return;
+                        const translated = node.textContent.replace("warning id ", "id de advertencia ");
+                        if (translated !== node.textContent) node.textContent = translated;
+                    });
+                    return;
+                }
+
+                if (p.classList.contains("banreason")) {
+                    return;
+                }
+
+                p.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent
+                        .replace(
+                            "a TETR.IO moderator has left a message for you. please read it thoroughly.",
+                            "un moderador de TETR.IO te ha dejado un mensaje. por favor, leelo con atencion."
+                        )
+                        .replace("you were warned at ", "fuiste advertido el ")
+                        .replace(" for the following reason:", " por el siguiente motivo:");
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            });
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "COMO RECORDATORIO SERIO…") {
+                return;
+            }
+
+            const main = dialog.querySelector("p:not(.modal_warning)");
+
+            if (main) {
+                main.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "IF YOU HAVE BEEN SILENCED, RESTRICTED OR OTHERWISE BANNED, YOU MAY NEVER SWITCH TO ANOTHER ACCOUNT TO EVADE THE BAN. THIS INCLUDES SWITCHING TO AN ANONYMOUS ACCOUNT. EVADING A BAN MAKES IT PERMANENT.",
+                        "SI HAS SIDO SILENCIADO, RESTRINGIDO O BANEADO DE CUALQUIER OTRA FORMA, NUNCA DEBES CAMBIAR A OTRA CUENTA PARA EVADIR EL BANEO. ESTO INCLUYE CAMBIAR A UNA CUENTA ANONIMA. EVADIR UN BANEO LO CONVIERTE EN PERMANENTE."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            const warning = dialog.querySelector("p.modal_warning");
+
+            if (warning) {
+                warning.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent
+                        .replace(
+                            "exceptions apply if the ban was not meant for you, or when logging out of an alternate account. for more info, read the ",
+                            "se aplican excepciones si el baneo no era para ti, o al cerrar sesion de una cuenta alternativa. para mas informacion, lee las "
+                        );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+
+                const link = warning.querySelector('a[href="/about/rules/"]');
+
+                if (link && link.textContent.trim() === "community rules") {
+                    text(link, "reglas de la comunidad");
+                }
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿ACTIVAR DEVTOOLS?") {
+                return;
+            }
+
+            dialog.querySelectorAll("p.modal_warning").forEach(p => {
+                translateByDict(p, {
+                    "IF YOU WERE ASKED TO DO THIS, TURN BACK! YOU ARE BEING SCAMMED!":
+                        "SI TE PIDIERON HACER ESTO, ¡DATE LA VUELTA! TE ESTAN ESTAFANDO!",
+                    "we request you have respect for TETR.IO and its competitive community.":
+                        "te pedimos que respetes a TETR.IO y su comunidad competitiva."
+                });
+            });
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "use of DEVTOOLS is pursuant to the TETR.IO terms of service, and abuse will see your account permanently suspended.":
+                        "el uso de DEVTOOLS esta sujeto a los terminos de servicio de TETR.IO, y el abuso hara que tu cuenta sea suspendida permanentemente."
+                });
+            }
+
+            dialog.querySelectorAll("p:not(.modal_warning):not(.modal_also)").forEach(p => {
+                translateByDict(p, {
+                    "enabling DEVTOOLS allows you access to tools that help develop TETR.IO, build on it and diagnose issues. if you do not know what you are here for, you will likely be putting your account in danger.":
+                        "activar DEVTOOLS te da acceso a herramientas que ayudan a desarrollar TETR.IO, construir sobre el y diagnosticar problemas. si no sabes para que estas aqui, probablemente estes poniendo tu cuenta en peligro."
+                });
+            });
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || !title.textContent.trim().startsWith("REPORT ")) {
+                return;
+            }
+
+            text(title, title.textContent.replace("REPORT ", "REPORTAR A "));
+
+            const paragraph = dialog.querySelector("p");
+
+            if (!paragraph) return;
+
+            paragraph.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) return;
+
+                const translated = node.textContent
+                    .replace(
+                        "please choose a category to report ",
+                        "elige una categoria para reportar a "
+                    )
+                    .replace(
+                        " to the TETR.IO moderators for. repeatedly placing false reports may result in a ban.",
+                        " ante los moderadores de TETR.IO. reportar falsamente de forma repetida puede resultar en un baneo."
+                    )
+                    .replace(
+                        "you have already reported ",
+                        "ya has reportado a "
+                    )
+                    .replace(
+                        " very recently. multiple reports from the same user are handled as one, so unless you are adding important additional context, please refrain from sending repeated reports. abuse of the reporting system may result in a ban.",
+                        " muy recientemente. varios reportes del mismo usuario se tratan como uno solo, asi que a menos que agregues contexto adicional importante, por favor evita enviar reportes repetidos. abusar del sistema de reportes puede resultar en un baneo."
+                    )
+                    .replace(
+                        "please explain briefly why you are reporting ",
+                        "explica brevemente por que estas reportando a "
+                    )
+                    .replace(
+                        " to the TETR.IO moderators below. repeatedly placing false reports may result in a ban.",
+                        " ante los moderadores de TETR.IO a continuacion. reportar falsamente de forma repetida puede resultar en un baneo."
+                    );
+
+                if (translated !== node.textContent) node.textContent = translated;
+            });
+
+            const textarea = paragraph.querySelector("#request_report");
+
+            if (textarea) {
+                attr(textarea, "placeholder", "MOTIVO");
+            }
+        });
+
+        /* CONEXION Y SERVIDOR */
+
+        // Dos variantes de "CONNECTION ERROR" con el mismo titulo. El msg
+        // original tiene "</p><p>" sueltos que el navegador NO separa en
+        // parrafos hermanos (quedan <p> anidados dentro del primero) -> no
+        // se puede asumir "p" ni una posicion fija. Se recorren
+        // TODOS los <p> del modal (esten anidados o no) y se traduce el
+        // texto propio de cada uno por contenido, no por indice.
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "ERROR DE CONEXION") {
+                return;
+            }
+
+            dialog.querySelectorAll("p:not(.modal_also)").forEach(p => {
+                p.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const value = node.textContent;
+                    const reasonMatch = value.match(/^REASON: (.+)$/);
+
+                    if (reasonMatch) {
+                        const translatedReason = CONNECTION_CLOSE_REASONS[reasonMatch[1]] || reasonMatch[1];
+                        node.textContent = `MOTIVO: ${translatedReason}`;
+                        return;
+                    }
+
+                    const translated = value
+                        .replace(
+                            "a connection error has occured and the connection was closed unexpectedly.",
+                            "ha ocurrido un error de conexion y la conexion se cerro inesperadamente."
+                        )
+                        .replace("the server has disconnected you.", "el servidor te ha desconectado.")
+                        .replace("check your internet connection and configuration.", "revisa tu conexion a internet y tu configuracion.")
+                        .replace("please check your internet connection and configuration.", "por favor revisa tu conexion a internet y tu configuracion.");
+
+                    if (translated !== value) node.textContent = translated;
+                });
+            });
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                modalAlso.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent
+                        .replace("SOCKET ID: ", "ID DE SOCKET: ")
+                        .replace("WORKER: ", "SERVIDOR: ")
+                        .replace("SPOOL: ", "GRUPO: ");
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+
+                modalAlso.querySelectorAll("span").forEach(span => translateByDict(span, {
+                    "THIRD-PARTY MODIFICATIONS DETECTED. DO NOT REPORT ANY ERRORS WHILE USING THIRD-PARTY MODIFICATIONS.":
+                        "MODIFICACIONES DE TERCEROS DETECTADAS. NO REPORTES NINGUN ERROR MIENTRAS USES MODIFICACIONES DE TERCEROS.",
+                    "THIRD-PARTY MODIFICATIONS ARE NOT SUPPORTED AND MAY BE INCOMPATIBLE. THIRD-PARTY MODIFICATIONS THAT IMPACT GAMEPLAY MAY BE AGAINST TERMS OF SERVICES.":
+                        "LAS MODIFICACIONES DE TERCEROS NO SON COMPATIBLES Y PUEDEN CAUSAR PROBLEMAS. LAS MODIFICACIONES DE TERCEROS QUE AFECTEN LA JUGABILIDAD PUEDEN INFRINGIR LOS TERMINOS DE SERVICIO."
+                }));
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "ACTUALIZACION REQUERIDA") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+                    const translated = node.textContent.replace(
+                        "an update is required to connect to multiplayer servers. click below to update!",
+                        "se requiere una actualizacion para conectarte a los servidores multijugador. ¡haz clic abajo para actualizar!"
+                    );
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title) return;
+
+            const titleValue = title.textContent.trim();
+            const dict = {
+                "EXPULSADO POR UN MODERADOR": [
+                    "a TETR.IO moderator or administrator has kicked you from the server. please reload to see the status of your account.",
+                    "un moderador o administrador de TETR.IO te ha expulsado del servidor. por favor recarga para ver el estado de tu cuenta."
+                ],
+                "BANEADO POR UN MODERADOR": [
+                    "a TETR.IO moderator or administrator has banned you from the server. please reload to see the status of your account.",
+                    "un moderador o administrador de TETR.IO te ha baneado del servidor. por favor recarga para ver el estado de tu cuenta."
+                ],
+                "BANEADO POR EL ANTI-TRAMPAS": [
+                    "our anti-cheat has flagged your actions as suspicious. please reload to see the status of your account.",
+                    "nuestro anti-trampas ha marcado tus acciones como sospechosas. por favor recarga para ver el estado de tu cuenta."
+                ],
+                "SE CERRO TU SESION": [
+                    "you were logged out manually. please log back in again.",
+                    "tu sesion se cerro manualmente. por favor inicia sesion de nuevo."
+                ]
+            };
+
+            const pair = dict[titleValue];
+
+            if (!pair) return;
+
+            const paragraph = dialog.querySelector("p");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+                    const translated = node.textContent.replace(pair[0], pair[1]);
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "MANTENIMIENTO INICIADO") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+                    const translated = node.textContent.replace(
+                        "the server has been shut down for maintenance.",
+                        "el servidor se ha cerrado por mantenimiento."
+                    );
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+            // el motivo del mantenimiento es texto libre del servidor.
+        });
+
+        /* CONTRASENA / CORREO / IMAGEN */
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "CONTRASENA REQUERIDA") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p");
+
+            if (!paragraph) return;
+
+            paragraph.childNodes.forEach(node => {
+                if (node.nodeType !== Node.TEXT_NODE) return;
+
+                const translated = node.textContent
+                    .replace("to continue, please re-enter the password for ", "para continuar, vuelve a ingresar la contrasena de ")
+                    .replace(
+                        "…as well as a six-digit code from your authenticator app, or one of your recovery codes",
+                        "…ademas de un codigo de seis digitos de tu app de autenticacion, o uno de tus codigos de recuperacion"
+                    );
+
+                if (translated !== node.textContent) node.textContent = translated;
+            });
+
+            const passwordInput = paragraph.querySelector("#request_password");
+
+            if (passwordInput) {
+                attr(passwordInput, "placeholder", "CONTRASENA");
+            }
+
+            const totpInput = paragraph.querySelector("#request_password_totp");
+
+            if (totpInput) {
+                attr(totpInput, "placeholder", "seis digitos");
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "IMAGEN RECHAZADA") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_also)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "this image was detected as potentially explicit. you must use a different image.",
+                        "esta imagen fue detectada como potencialmente explicita. debes usar una imagen diferente."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "using an explicit image will get your account restricted.":
+                        "usar una imagen explicita hara que tu cuenta sea restringida."
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "oye, ¡aun no has configurado un correo electronico!") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_also):not(.modal_warning)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "adding an email keeps your account safe and ensures you can get back into it if you lose the password. just type your email in the box below, and it'll be attached to your account.",
+                        "agregar un correo mantiene tu cuenta segura y asegura que puedas recuperarla si pierdes la contrasena. simplemente escribe tu correo en el cuadro de abajo, y quedara vinculado a tu cuenta."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+
+                const input = paragraph.querySelector("#emailnag");
+
+                if (input) {
+                    attr(input, "placeholder", "correo");
+                }
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "we'll never send you spam or sell your email address.":
+                        "nunca te enviaremos spam ni venderemos tu direccion de correo."
+                });
+            }
+
+            const modalWarning = dialog.querySelector("p.modal_warning");
+
+            if (modalWarning) {
+                translateByDict(modalWarning, {
+                    "without an email on your account, if you forget your password, you will have no way to recover your account!":
+                        "sin un correo en tu cuenta, si olvidas tu contrasena, no tendras forma de recuperarla!"
+                });
+            }
+        });
+
+        /* LIGA TETRA / CONFIGURACION / ZEN */
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "BIENVENIDO A LIGA TETRA") {
+                return;
+            }
+
+            const paragraphs = dialog.querySelectorAll("p");
+
+            if (paragraphs[0]) {
+                paragraphs[0].childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "TETRA LEAGUE is a competitive 1v1 mode. win duels against players of similar skill to rank up and conquer the leaderboards!",
+                        "LIGA TETRA es un modo competitivo 1v1. gana duelos contra jugadores de tu mismo nivel para subir de rango y conquistar las clasificaciones!"
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            if (paragraphs[1]) {
+                translateByDict(paragraphs[1], {
+                    "if you're new to stackers or are feeling rusty, it's a good idea to practice in other modes first.":
+                        "si eres nuevo en los stackers o sientes que estas oxidado, es buena idea practicar primero en otros modos."
+                });
+            }
+
+            const warning = dialog.querySelector("p.modal_warning");
+
+            if (warning) {
+                translateByDict(warning, {
+                    "make sure you have the time and connection to play! if you leave or disconnect early, you must rejoin immediately or you will be penalized.":
+                        "¡asegurate de tener el tiempo y la conexion para jugar! si te vas o te desconectas antes de tiempo, debes volver a unirte inmediatamente o seras penalizado."
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿IMPORTAR CONFIGURACION?") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_warning):not(.modal_also)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "are you sure you wish to import this CONFIG file? it will override your current CONFIG.",
+                        "¿estas seguro de que quieres importar este archivo de CONFIGURACION? sobrescribira tu CONFIGURACION actual."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            const warning = dialog.querySelector("p.modal_warning");
+
+            if (warning) {
+                translateByDict(warning, {
+                    "DO NOT IMPORT A CONFIG YOU DO NOT TRUST!": "¡NO IMPORTES UNA CONFIGURACION EN LA QUE NO CONFIES!"
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "your current CONFIG will be lost.": "tu CONFIGURACION actual se perdera."
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿DESTRUIR EL PROGRESO DE ZEN?") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_also)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "you'll be reset to LEVEL 1 and 0 SCORE, with an empty board to start anew.",
+                        "volveras al NIVEL 1 y 0 PUNTUACION, con un tablero vacio para empezar de nuevo."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, { "this cannot be undone.": "esto no se puede deshacer." });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "WEBGL FALLO") {
+                return;
+            }
+
+            const paragraphs = dialog.querySelectorAll("p:not(.modal_also)");
+
+            if (paragraphs[0]) {
+                paragraphs[0].childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "an error has caused WEBGL to crash.",
+                        "un error ha provocado que WEBGL falle."
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            if (paragraphs[1]) {
+                translateByDict(paragraphs[1], {
+                    "this could be caused by many issues, like a driver error, a GPU error, a browser error or insufficient resources.":
+                        "esto puede deberse a muchas causas, como un error de controlador, un error de GPU, un error del navegador o recursos insuficientes."
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "you can choose to continue the current session, which may not work properly, or reload to try again. sometimes, exiting the ongoing game can fix the error.":
+                        "puedes elegir continuar la sesion actual, que podria no funcionar correctamente, o recargar para intentarlo de nuevo. a veces, salir de la partida en curso soluciona el error."
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const title = dialog.querySelector("h1");
+
+            if (!title || title.textContent.trim() !== "¿USAR LEGACY WEBGL?") {
+                return;
+            }
+
+            const paragraph = dialog.querySelector("p:not(.modal_also)");
+
+            if (paragraph) {
+                paragraph.childNodes.forEach(node => {
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+
+                    const translated = node.textContent.replace(
+                        "LEGACY WEBGL is the slowest WEBGL mode and may introduce bugs. only use it if the other modes do not work for you (for example, you see graphical glitches or flickering while playing)!",
+                        "LEGACY WEBGL es el modo WEBGL mas lento y puede introducir errores. usalo solo si los otros modos no funcionan para ti (por ejemplo, si ves fallos graficos o parpadeos mientras juegas)!"
+                    );
+
+                    if (translated !== node.textContent) node.textContent = translated;
+                });
+            }
+
+            const modalAlso = dialog.querySelector("p.modal_also");
+
+            if (modalAlso) {
+                translateByDict(modalAlso, {
+                    "when reporting a bug, please mention LEGACY WEBGL is enabled.":
+                        "al reportar un error, por favor menciona que LEGACY WEBGL esta activado."
+                });
+            }
+        });
+
+        e.querySelectorAll(".oob_modal").forEach(dialog => {
+            const center = dialog.querySelector("center h1");
+
+            if (!center || center.textContent.trim() !== "THANK YOU FOR REPORTING") {
+                return;
+            }
+
+            text(center, "GRACIAS POR REPORTAR");
+
+            dialog.querySelectorAll("p").forEach(p => {
+                translateByDict(p, {
+                    "thank you for your recent report! reports like yours help us identify those who disrupt TETR.IO for everyone.":
+                        "¡gracias por tu reporte reciente! reportes como el tuyo nos ayudan a identificar a quienes perturban TETR.IO para todos.",
+                    "your recent reports led to actions against a badly behaving player and their account. thank you for making TETR.IO a better place!":
+                        "tus reportes recientes llevaron a acciones contra un jugador con mal comportamiento y su cuenta. ¡gracias por hacer de TETR.IO un mejor lugar!",
+                    "we hope you'll continue assisting us by reporting bad behavior in the future, as well.":
+                        "esperamos que sigas ayudandonos reportando malos comportamientos en el futuro tambien.",
+                    "TETR.IO STAFF": "EQUIPO DE TETR.IO"
+                });
+            });
         });
     },
     "tetra_achievement_data": (e) => {
