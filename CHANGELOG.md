@@ -12,6 +12,8 @@ este archivo a mano antes de taguear.
 
 ## [Sin publicar]
 
+## [1.0.1] - 2026-09-14
+
 ### Añadido
 - Cobertura de traducción muy ampliada en `tetrio.js`/la extensión: modales de
   cuenta (cerrar sesión, cambiar nombre, verificación en dos pasos, reportes),
