@@ -17,10 +17,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Duplicados en Assets/src/*.js
-        run: ./Assets/check-duplicates.sh
+        run: bash Assets/check-duplicates.sh
 
       - name: Reconstruir Assets/translation.js
-        run: ./Assets/build-translation.sh
+        run: bash Assets/build-translation.sh
 
       - name: manifest.json de la extensión es JSON válido
         run: node -e "JSON.parse(require('fs').readFileSync('browser-extension/manifest.json', 'utf-8'))"
